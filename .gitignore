@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# Custom
+data
+bin
+src/bridge161
+src/correlator
+tmp
+test
+misc
