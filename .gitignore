@@ -39,3 +39,4 @@ src/correlator
 tmp
 test
 misc
+.local
