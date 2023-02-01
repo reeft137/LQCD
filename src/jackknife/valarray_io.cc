@@ -1,7 +1,7 @@
 /**
  * @file valarray_io.cc
- * @author Tianchen (zhangtc@rcnp.osaka-u.ac.jp)
- * @brief read and write double and complex valarrays from and to files
+ * @author TC (reeft137@gmail.com)
+ * @brief Read and write valarrays (binary files and txt files)
  * @version 0.1
  * @date 2023-01-17
  *
@@ -11,17 +11,18 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <string.h>
-
+// #include <complex.h>
 #include <valarray>
-
 #include "valarray_io.h"
 
+// typedef double complex Complex;
 typedef double _Complex Complex;
 typedef std::valarray<double> VAL_double;
 typedef std::valarray<Complex> VAL_complex;
 
 VAL_double read_corr_double(const char *ifname, int maxrow)
 {
+  // Copy the
   char tmp[2048];
   char dir[2048];
   char base[2048];
@@ -152,27 +153,28 @@ void write_result_to_txt(const char *ofname, int maxrow, const VAL_complex &vald
   {
     int max_distance = 0;
 
-    for (int i = 0; i < maxrow/2+1; i++)
-    for (int j = i; j < maxrow/2+1; j++)
-    for (int k = j; k < maxrow/2+1; k++)
-    {
-        max_distance++;
-    }
+    for (int i = 0; i < maxrow / 2 + 1; i++)
+      for (int j = i; j < maxrow / 2 + 1; j++)
+        for (int k = j; k < maxrow / 2 + 1; k++)
+        {
+          max_distance++;
+        }
 
-    double distance[max_distance]; 
-    int index = 0; 
+    double distance[max_distance];
+    int index = 0;
 
-    for (int i = 0; i < maxrow/2+1; i++)
-    for (int j = i; j < maxrow/2+1; j++)
-    for (int k = j; k < maxrow/2+1; k++)
-    {
-        double temp = i*i+j*j+k*k; 
-        temp = pow(temp, 0.5);
-        distance[index] = temp;;
+    for (int i = 0; i < maxrow / 2 + 1; i++)
+      for (int j = i; j < maxrow / 2 + 1; j++)
+        for (int k = j; k < maxrow / 2 + 1; k++)
+        {
+          double temp = i * i + j * j + k * k;
+          temp = pow(temp, 0.5);
+          distance[index] = temp;
+          ;
 
-        index++;
-    }
-    
+          index++;
+        }
+
     for (int i = 0; i < max_distance; i++)
     {
       fprintf(ofp, "%1.16e  %1.16e  %1.16e\n", distance[i], __real__ valdata[i], __imag__ valdata[i]);
