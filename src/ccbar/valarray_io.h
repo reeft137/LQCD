@@ -1,6 +1,6 @@
 /**
  * @file valarray_io.h
- * @author Tianchen (zhangtc@rcnp.osaka-u.ac.jp)
+ * @author TC (reeft137@gmail.com)
  * @brief Read and write valarrays (binary files)
  * @version 0.1
  * @date 2023-01-17

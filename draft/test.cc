@@ -1,26 +1,27 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
+#include <complex>
 #include <valarray>
-#include <complex.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+typedef std::valarray<double> VARRAY_DOUBLE;
 
 int main()
 {
-  
-  // printf("%d %-1d\n", 1373471, 138);
-  // printf(":%s:\n", "hello world");
-  // printf(":%.16e:\n", 0.98492394829349823);
+  VARRAY_DOUBLE sum(64), sum_square(64), out(64), var(64);
+  sum = sum_square = out = var = 0.0;
 
-  double complex z1 = 1.0 + 1.0 * I;
+  if (mkdir("testdir", 0777))
+    perror("testdir");
+  if (chmod("testdir", 0000744))
+    perror("testdir");
 
-  printf("%.1f\n", creal(aa));
-  // std::valarray<double> TEST(10);
-  // TEST = 0.0;
+    printf("dfdfdf""dfdfdfd");
 
-  // printf("test\n");
-  // for (int i = 0; i < 10; i++)
-  // {
-  //   printf("%1.16e\n", TEST[i]);
-  // }
+  // printf("%.1f %.1f\n", real(z1), imag(z1));
 
   return 0;
 }
