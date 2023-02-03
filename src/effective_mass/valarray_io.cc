@@ -1,5 +1,5 @@
 /**
- * @file valarray_io.cc
+ * @file data_io.cc
  * @author Tianchen (zhangtc@rcnp.osaka-u.ac.jp)
  * @brief read and write double and complex valarrays from and to files
  * @version 0.1
@@ -14,7 +14,7 @@
 
 #include <valarray>
 
-#include "valarray_io.h"
+#include "data_io.h"
 
 typedef double _Complex Complex;
 typedef std::valarray<double> VAL_double;

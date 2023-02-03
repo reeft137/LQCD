@@ -1,5 +1,5 @@
 /**
- * @file valarray_io.cc
+ * @file data_io.cc
  * @author TC (reeft137@gmail.com)
  * @brief Read and write valarrays (binary files)
  * @version 0.1
@@ -18,7 +18,7 @@
 #include <valarray>
 
 // Custom libraries
-#include "valarray_io.h"
+#include "data_io.h"
 
 typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
@@ -33,10 +33,10 @@ typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
  */
 inline char *ifname(const char *fname)
 {
-  char stmp[4096], dir[4096], base[4096], ifname[4096];
-  strncpy(stmp, fname, 4095);
-  strncpy(dir, dirname(stmp), 4095);
-  strncpy(base, basename(stmp), 4095);
+  char stmp[2048], dir[2048], base[2048], ifname[2048];
+  strncpy(stmp, fname, 2047);
+  strncpy(dir, dirname(stmp), 2047);
+  strncpy(base, basename(stmp), 2047);
   sprintf(ifname, "%s/%s", dir, base);
   fprintf(stderr, "Reading file: %s... \n", ifname);
   return ifname;
@@ -51,10 +51,10 @@ inline char *ifname(const char *fname)
  */
 inline char *ofname(const char *fname, const char *prefix)
 {
-  char stmp[4096], dir[4096], base[4096], ofname[4096];
-  strncpy(stmp, fname, 4095);
-  strncpy(dir, dirname(stmp), 4095);
-  strncpy(base, basename(stmp), 4095);
+  char stmp[2048], dir[2048], base[2048], ofname[2048];
+  strncpy(stmp, fname, 2047);
+  strncpy(dir, dirname(stmp), 2047);
+  strncpy(base, basename(stmp), 2047);
   sprintf(ofname, "%s/%s.%s", dir, prefix, base);
   fprintf(stderr, "generating %s\n", ofname);
   return ofname;

@@ -22,7 +22,7 @@
 #include <valarray>
 
 // Custom libraries
-#include "valarray_io.h"
+#include "data_io.h"
 
 typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
@@ -66,8 +66,8 @@ static const char *ofbase_4pt = NULL;
 
 int main(int argc, char *argv[])
 {
-  char program_name[4096];
-  strncpy(program_name, basename(argv[0]), 4095);
+  char program_name[2048];
+  strncpy(program_name, basename(argv[0]), 2047);
   argc--;
   argv++;
 

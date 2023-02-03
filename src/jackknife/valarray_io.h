@@ -1,5 +1,5 @@
 /**
- * @file valarray_io.h
+ * @file data_io.h
  * @author Tianchen (zhangtc@rcnp.osaka-u.ac.jp)
  * @brief Read and write valarrays (binary files)
  * @version 0.1

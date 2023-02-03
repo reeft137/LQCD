@@ -1,7 +1,7 @@
 /**
- * @file valarray_io.h
+ * @file data_io.h
  * @author Tianchen (zhangtc@rcnp.osaka-u.ac.jp)
- * @brief head file for valarray_io.cc
+ * @brief head file for data_io.cc
  *        read and write double and complex valarrays from and to files
  * @version 0.1
  * @date 2023-01-17

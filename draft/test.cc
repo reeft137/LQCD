@@ -5,23 +5,35 @@
 #include <complex>
 #include <valarray>
 #include <sys/stat.h>
+#include <math.h>
 #include <sys/types.h>
 
 typedef std::valarray<double> VARRAY_DOUBLE;
 
-int main()
+int main(int argc, char *argv[])
 {
-  VARRAY_DOUBLE sum(64), sum_square(64), out(64), var(64);
-  sum = sum_square = out = var = 0.0;
+  argc--;
+  argv++;
 
-  if (mkdir("testdir", 0777))
-    perror("testdir");
-  if (chmod("testdir", 0000744))
-    perror("testdir");
+  for (int i = 0; i < argc; i++)
+  {
+    printf("%s\n", argv[i]);
+  }
 
-    printf("dfdfdf""dfdfdfd");
+  printf("*****-----*****-----*****-----*****-----*****-----*****-----*****-----*****-----*****");
+  char **tmp = NULL;
+  tmp = argv;
 
-  // printf("%.1f %.1f\n", real(z1), imag(z1));
+  for (int i = 0; i < argc; i++)
+  {
+    printf("%s\n", tmp[i]);
+  }
+  // ifp = fopen(argv[0], "r");
+  // ofp = fopen(ofname, "w");
+
+  // char content[20];
+  // fscanf(ifp, "%s", content);
+  // fprintf(ofp, "12323232132131, %s", content);
 
   return 0;
 }

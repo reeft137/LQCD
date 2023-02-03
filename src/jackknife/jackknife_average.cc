@@ -17,7 +17,7 @@
 
 #include <valarray>
 
-#include "valarray_io.h"
+#include "data_io.h"
 
 typedef double _Complex Complex;
 typedef std::valarray<Complex> VAL_complex;

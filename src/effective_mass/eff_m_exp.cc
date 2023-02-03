@@ -16,7 +16,7 @@
 #include <math.h>
 #include <valarray>
 
-#include "valarray_io.h"
+#include "data_io.h"
 
 typedef std::valarray<double> VAL_double;
 
