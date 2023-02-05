@@ -15,8 +15,10 @@
 #include <string.h>
 #include <libgen.h>
 
+// Generate filename for printing
 void gen_print_name(const char *ifname, char *ofname);
 
+// Add prefix to a file path ("dir/prefix.base")
 void add_prefix(const char *ifname, const char *prefix, char *ofname);
 
 #endif

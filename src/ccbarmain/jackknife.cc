@@ -2,7 +2,7 @@
 /**
  * @file jackknife.cc
  * @author TC (reeft137@gmail.com)
- * @brief Convert original data to jackknife sampled data
+ * @brief
  * @version 0.1
  * @date 2023-01-16
  *
@@ -28,41 +28,50 @@ typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
 typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
 
-// Time reverse function
-VARRAY_DOUBLE time_reverse(VARRAY_COMPLEX &valdata, int maxline)
+// Keep the real part of the data
+void keep_real(VARRAY_COMPLEX &data, VARRAY_DOUBLE &rdata, int maxline)
 {
-  VARRAY_DOUBLE valtmp(maxline);
-  valtmp = 0.0;
-  for (int i = 0; i < maxline; i++)
+  for (size_t i = 0; i < maxline; i++)
   {
-    valtmp[i] = valdata[i].real();
+    rdata[i] = data[i].real();
   }
-  for (int i = 0; i < maxline / 2 + 1; i++)
-  {
-    valtmp[i] = (valtmp[i] + valtmp[(maxline - i) % maxline]) * 0.5;
-  }
-  return valtmp;
 }
 
 // Jackknife sample
-void jackknife_sample(char *datalist[], int maxline, int N, char *r_datalist[])
+void jackknife_resample(const char *datalist[], int maxline, int N, char *r_datalist[])
 {
   VARRAY_DOUBLE sum(maxline), sum_square(maxline), value(maxline), var(maxline);
   sum = sum_square = value = var = 0.0;
 
+  // First round: Get sum and sum^2 of all data
   for (int i = 0; i < N; i++)
   {
-    VARRAY_COMPLEX tmp = read_complex_varray(datalist[i], maxline);
-    sum += time_reverse(tmp, maxline);
-    sum_square += pow(time_reverse(tmp, maxline), 2);
+    VARRAY_COMPLEX tmp;
+    tmp = 0.0;
+    read_bin(datalist[i], maxline, tmp);
+
+    VARRAY_DOUBLE rtmp;
+    rtmp = 0.0;
+    keep_real(tmp, rtmp, maxline);
+
+    sum += rtmp;
+    sum_square += pow(rtmp, 2);
   }
 
+  // Second round: Generate the Jackknife sampled data and calculate the variance
+  //               Also, save files and copy the file name to r_datalist[]
   for (int i = 0; i < N; i++)
   {
-    VARRAY_COMPLEX tmp = read_complex_varray(datalist[i], maxline);
-    value = (sum - time_reverse(tmp, maxline)) / (N - 1.0);
-    var = (sum_square - pow(time_reverse(tmp, maxline), 2)) / double(N - 1);
-    var = sqrt((var - pow(value, 2)) / double(N - 2));
+    VARRAY_COMPLEX tmp;
+    tmp = 0.0;
+    read_bin(datalist[i], maxline, tmp);
+
+    VARRAY_DOUBLE rtmp;
+    rtmp = 0.0;
+    keep_real(tmp, rtmp, maxline);
+
+    value = (sum - rtmp) / (N - 1.0);
+    var = sqrt(((sum_square - pow(rtmp, 2)) / double(N - 1.0) - pow(value, 2)) / double(N - 2.0));
 
     VARRAY_COMPLEX result(maxline);
     result = 0.0;
@@ -74,7 +83,8 @@ void jackknife_sample(char *datalist[], int maxline, int N, char *r_datalist[])
 
     char ofname[2048];
     add_prefix(datalist[i], "js", ofname);
-    write_complex_varray(ofname, maxline, result);
+
+    write_bin(ofname, maxline, result);
 
     strncpy(r_datalist[i], ofname, 2047);
   }
@@ -88,25 +98,33 @@ void jackknife_average(char *datalist[], int maxline, int N, const char *ofname)
 
   for (int i = 0; i < N; i++)
   {
-    VARRAY_COMPLEX tmp = read_complex_varray(datalist[i], maxline);
+    VARRAY_COMPLEX tmp(maxline);
+    tmp = 0.0;
+    read_bin(datalist[i], maxline, tmp);
+
     VARRAY_DOUBLE realtmp(maxline);
     realtmp = 0.0;
     for (int i = 0; i < maxline; i++)
     {
       realtmp[i] = tmp[i].real();
     }
+
     mean += realtmp / double(N);
   }
 
   for (int i = 0; i < N; i++)
   {
-    VARRAY_COMPLEX tmp = read_complex_varray(datalist[i], maxline);
+    VARRAY_COMPLEX tmp(maxline);
+    tmp = 0.0;
+    read_bin(datalist[i], maxline, tmp);
+
     VARRAY_DOUBLE realtmp(maxline);
     realtmp = 0.0;
     for (int i = 0; i < maxline; i++)
     {
       realtmp[i] = tmp[i].real();
     }
+
     var += pow((realtmp - mean), 2);
   }
 

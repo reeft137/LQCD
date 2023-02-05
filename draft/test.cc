@@ -15,19 +15,34 @@ int main(int argc, char *argv[])
   argc--;
   argv++;
 
-  for (int i = 0; i < argc; i++)
+  FILE *fp = NULL;
+  fp = fopen("out.txt", "wb");
+  int data[10];
+  for (size_t i = 0; i < 10; i++)
   {
-    printf("%s\n", argv[i]);
+    data[i] = i;
   }
 
-  printf("*****-----*****-----*****-----*****-----*****-----*****-----*****-----*****-----*****");
-  char **tmp = NULL;
-  tmp = argv;
+  int C = fwrite(data, sizeof(int), 20, fp);
+  fclose(fp);
+  printf("%d\n", C);
 
-  for (int i = 0; i < argc; i++)
+  FILE *ofp = NULL;
+  ofp = fopen("wtest.txt", "rb");
+  int datadata[20];
+  for (size_t i = 0; i < 10; i++)
   {
-    printf("%s\n", tmp[i]);
+    datadata[i] = 0;
   }
+
+  int D = fread(datadata, sizeof(int), 20, ofp);
+  fclose(ofp);
+  for (size_t i = 0; i < 20; i++)
+  {
+    printf("%d\n", datadata[i]);
+  }
+  printf("%d\n", D);
+
   // ifp = fopen(argv[0], "r");
   // ofp = fopen(ofname, "w");
 

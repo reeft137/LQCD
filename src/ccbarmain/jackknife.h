@@ -2,7 +2,9 @@
 /**
  * @file jackknife.h
  * @author TC (reeft137@gmail.com)
- * @brief Provide functions of jackknife sample and average
+ * @brief Provide functions of jackknife sample and average. 
+ *        Also, these functions will provide the file names 
+ *        of the sampled data. 
  * @version 0.1
  * @date 2023-01-16
  *
@@ -30,7 +32,7 @@ typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
 typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
 
-char **jackknife_sample(char *datalist[], int maxline, int N, char *r_datalist[]); 
+void jackknife_resample(const char *datalist[], int maxline, int N, char *r_datalist[]); 
 
 void jackknife_average(char *datalist[], int maxline, int N, const char *ofname);
 
