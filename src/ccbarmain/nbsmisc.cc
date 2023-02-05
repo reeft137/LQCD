@@ -46,6 +46,11 @@ typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
 //         +    CORR(ptr, iy, ix, iz, Llength);
 // }
 
+void a1_plus(const char *datalist[], int maxline, int N, char *r_datalist[])
+{
+  
+}
+
 //     COMPLEX raw[xyzSites];
 
 //     // size_t len =

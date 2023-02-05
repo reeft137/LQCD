@@ -29,4 +29,6 @@ typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
 typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
 
+void a1_plus(const char *datalist[], int maxline, int N, char *r_datalist[]);
+
 #endif

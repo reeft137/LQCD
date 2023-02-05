@@ -217,10 +217,10 @@ int main(int argc, char *argv[])
   // DATA ANALYSING ON 4PT CORRELATION FUNCTIONS
   if (corr_4pt)
   {
-    char *tr_tmp_datalist[N], *js_tmp_datalist[N];
+    char *a1_tmp_datalist[N], *js_tmp_datalist[N];
     for (size_t i = 0; i < N; i++)
     {
-      tr_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
+      a1_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
       strncpy(tr_tmp_datalist[i], argv[i], 2047);
       js_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
       strncpy(js_tmp_datalist[i], argv[i], 2047);
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
     // Finalization for the string arrays
     for (size_t i = 0; i < N; i++)
     {
-      free(tr_tmp_datalist[i]);
+      free(a1_tmp_datalist[i]);
       free(js_tmp_datalist[i]);
     }
   }

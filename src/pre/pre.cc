@@ -32,10 +32,10 @@ void usage(char *name)
           name);
   fprintf(stderr, "OPTIONS: \n"
                   "  MAN: \n"
-                  "    [-h, --help]:       see usage\n"
-                  "    [-ofname]:          output filename\n"
+                  "    [-h, --help]:          see usage\n"
+                  "    [-ofname] (filename):  output filename\n"
                   "  MUST: \n"
-                  "    -maxline (maxline): 2pt: # of time sites; 4pt: # of space sites\n");
+                  "    -maxline (maxline):    2pt: # of time sites; 4pt: # of space sites\n");
 }
 
 // Global variables to store the contents of options
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
     tmp = 0.0;
 
     read_bin(argv[i], maxline, tmp);
-    out += tmp * 0.5;
+    out += tmp / double(N);
   }
 
   write_bin(ofname, maxline, out);
