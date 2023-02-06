@@ -38,7 +38,7 @@ void keep_real(VARRAY_COMPLEX &data, VARRAY_DOUBLE &rdata, int maxline)
 }
 
 // Jackknife sample
-void jackknife_resample(const char *datalist[], int maxline, int N, char *r_datalist[])
+void jackknife_resample(char *datalist[], int maxline, int N, char *r_datalist[])
 {
   VARRAY_DOUBLE sum(maxline), sum_square(maxline), value(maxline), var(maxline);
   sum = sum_square = value = var = 0.0;
@@ -46,11 +46,11 @@ void jackknife_resample(const char *datalist[], int maxline, int N, char *r_data
   // First round: Get sum and sum^2 of all data
   for (int i = 0; i < N; i++)
   {
-    VARRAY_COMPLEX tmp;
+    VARRAY_COMPLEX tmp(maxline);
     tmp = 0.0;
     read_bin(datalist[i], maxline, tmp);
 
-    VARRAY_DOUBLE rtmp;
+    VARRAY_DOUBLE rtmp(maxline);
     rtmp = 0.0;
     keep_real(tmp, rtmp, maxline);
 
@@ -62,11 +62,11 @@ void jackknife_resample(const char *datalist[], int maxline, int N, char *r_data
   //               Also, save files and copy the file name to r_datalist[]
   for (int i = 0; i < N; i++)
   {
-    VARRAY_COMPLEX tmp;
+    VARRAY_COMPLEX tmp(maxline);
     tmp = 0.0;
     read_bin(datalist[i], maxline, tmp);
 
-    VARRAY_DOUBLE rtmp;
+    VARRAY_DOUBLE rtmp(maxline);
     rtmp = 0.0;
     keep_real(tmp, rtmp, maxline);
 

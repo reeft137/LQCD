@@ -61,7 +61,7 @@ inline void mkchdir(const char *destination)
 }
 
 // Time reversal
-void time_reverse_2pt(const char *datalist[], int maxline, int N, char *r_datalist[]);
+void time_reverse_2pt(char *datalist[], int maxline, int N, char *r_datalist[]);
 
 // Global variables to store the contents of options
 static const char *corr_2pt = NULL;
@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
 
     // Calculate correlators
     jackknife_resample(n2_tmp_datalist, maxline3, N, js_tmp_datalist);
-    jackknife_average(js_tmp_datalist, maxline, N, corr_4pt);
+    jackknife_average(js_tmp_datalist, maxline3, N, corr_4pt);
     cartesian_to_spherical(corr_4pt, maxline);
 
     // Kawanai-Sasaki method
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
 }
 
 // Definition for the time_reverse_2pt function
-void time_reverse_2pt(const char *datalist[], int maxline, int N, char *r_datalist[])
+void time_reverse_2pt(char *datalist[], int maxline, int N, char *r_datalist[])
 {
   for (int i = 0; i < N; i++)
   {

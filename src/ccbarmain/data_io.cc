@@ -178,7 +178,7 @@ void write_txt(const char *fname, int maxline, const COMPLEX *data)
 
   for (size_t i = 0; i < maxline; i++)
   {
-    fprintf(fp, "%02d %1.16e %1.16e\n", i, data[i].real(), data[i].imag());
+    fprintf(fp, "%d %1.16e %1.16e\n", i, data[i].real(), data[i].imag());
   }
   fclose(fp);
 }
@@ -198,7 +198,7 @@ void write_txt(const char *fname, int maxline, const VARRAY_COMPLEX &data)
 
   for (size_t i = 0; i < maxline; i++)
   {
-    fprintf(fp, "%02d %1.16e %1.16e\n", i, data[i].real(), data[i].imag());
+    fprintf(fp, "%d %1.16e %1.16e\n", i, data[i].real(), data[i].imag());
   }
   fclose(fp);
 }

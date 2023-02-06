@@ -1,7 +1,7 @@
 #!/bin/bash
+DATA_DIR=$1
 LQCD_BASE_DIR=/home/puppy/LQCD
-TSITES=$1
-DATA_DIR=$2
+TSITES=64
 
 cd $DATA_DIR
 

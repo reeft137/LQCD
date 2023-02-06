@@ -32,7 +32,7 @@ typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
 typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
 
-void jackknife_resample(const char *datalist[], int maxline, int N, char *r_datalist[]); 
+void jackknife_resample(char *datalist[], int maxline, int N, char *r_datalist[]); 
 
 void jackknife_average(char *datalist[], int maxline, int N, const char *ofname);
 

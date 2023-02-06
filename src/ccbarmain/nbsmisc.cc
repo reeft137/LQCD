@@ -27,35 +27,39 @@ typedef std::valarray<double> VARRAY_DOUBLE;
 typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
 
 // Inline functions
-// Extract the value of the correlation function on a specific space site
-inline COMPLEX CORR(const COMPLEX *data, int xsite, int ysite, int zsite, int spacelength)
+// Extract the value of the correlatorelation function on a specific space site
+// !!! Important !!!
+// If you want some function return an lvalue, then please declare the type of the function to be a reference
+COMPLEX &correlator(COMPLEX *data, int x, int y, int z, int spacelength)
 {
-  xsite = (xsite + spacelength) % spacelength;
-  ysite = (ysite + spacelength) % spacelength;
-  zsite = (zsite + spacelength) % spacelength;
-  return data[xsite + spacelength * (ysite + spacelength * zsite)];
+  x = (x + spacelength) % spacelength;
+  y = (y + spacelength) % spacelength;
+  z = (z + spacelength) % spacelength;
+  COMPLEX &corr = data[x + spacelength * (y + spacelength * z)];
+  return corr;
 }
 
-inline double CORR(const double *data, int xsite, int ysite, int zsite, int spacelength)
+inline double &correlator(double *data, int x, int y, int z, int spacelength)
 {
-  xsite = (xsite + spacelength) % spacelength;
-  ysite = (ysite + spacelength) % spacelength;
-  zsite = (zsite + spacelength) % spacelength;
-  return data[xsite + spacelength * (ysite + spacelength * zsite)];
+  x = (x + spacelength) % spacelength;
+  y = (y + spacelength) % spacelength;
+  z = (z + spacelength) % spacelength;
+  double &corr = data[x + spacelength * (y + spacelength * z)];
+  return corr;
 }
 
 // Simplification for the A1+ projection
-inline COMPLEX SPHERE(const COMPLEX *data, int xsite, int ysite, int zsite, int spacelength)
+inline COMPLEX sphere_sym(COMPLEX *data, int x, int y, int z, int spacelength)
 {
-  return CORR(data, xsite, ysite, zsite, spacelength) + CORR(data, ysite, zsite, xsite, spacelength) + CORR(data, zsite, xsite, ysite, spacelength) + CORR(data, xsite, zsite, ysite, spacelength) + CORR(data, zsite, ysite, xsite, spacelength) + CORR(data, ysite, xsite, zsite, spacelength);
+  return (correlator(data, x, y, z, spacelength) + correlator(data, y, z, x, spacelength) + correlator(data, z, x, y, spacelength) + correlator(data, x, z, y, spacelength) + correlator(data, z, y, x, spacelength) + correlator(data, y, x, z, spacelength)) / 6.0;
 }
 
-inline COMPLEX A1(const COMPLEX *data, int xsite, int ysite, int zsite, int spacelength)
+inline COMPLEX a1_sym(COMPLEX *data, int x, int y, int z, int spacelength)
 {
-  return SPHERE(data, xsite, ysite, zsite, spacelength) + SPHERE(data, xsite, ysite, spacelength - zsite, spacelength) + SPHERE(data, xsite, spacelength - ysite, zsite, spacelength) + SPHERE(data, xsite, spacelength - ysite, spacelength - zsite, spacelength) + SPHERE(data, spacelength - xsite, ysite, zsite, spacelength) + SPHERE(data, spacelength - xsite, ysite, spacelength - zsite, spacelength) + SPHERE(data, spacelength - xsite, spacelength - ysite, zsite, spacelength) + SPHERE(data, spacelength - xsite, spacelength - ysite, spacelength - zsite, spacelength);
+  return (sphere_sym(data, x, y, z, spacelength) + sphere_sym(data, x, y, spacelength - z, spacelength) + sphere_sym(data, x, spacelength - y, z, spacelength) + sphere_sym(data, x, spacelength - y, spacelength - z, spacelength) + sphere_sym(data, spacelength - x, y, z, spacelength) + sphere_sym(data, spacelength - x, y, spacelength - z, spacelength) + sphere_sym(data, spacelength - x, spacelength - y, z, spacelength) + sphere_sym(data, spacelength - x, spacelength - y, spacelength - z, spacelength)) / 8.0;
 }
 
-void a1_plus(const char *datalist[], int spacelength, int N, char *r_datalist[])
+void a1_plus(char *datalist[], int spacelength, int N, char *r_datalist[])
 {
   int maxline = int(pow(spacelength, 3));
 
@@ -68,13 +72,14 @@ void a1_plus(const char *datalist[], int spacelength, int N, char *r_datalist[])
     }
 
     read_bin(datalist[i], maxline, tmp);
+
     for (size_t ix = 0; ix < spacelength; ix++)
     {
       for (size_t iy = 0; iy < spacelength; iy++)
       {
         for (size_t iz = 0; iz < spacelength; iz++)
         {
-          CORR(result, ix, iy, iz, spacelength) = A1(tmp, ix, iy, iz, spacelength);
+          correlator(result, ix, iy, iz, spacelength) = a1_sym(tmp, ix, iy, iz, spacelength);
         }
       }
     }
@@ -88,7 +93,7 @@ void a1_plus(const char *datalist[], int spacelength, int N, char *r_datalist[])
   }
 }
 
-void normalize(const char *datalist[], int spacelength, int N, char *r_datalist[])
+void normalize(char *datalist[], int spacelength, int N, char *r_datalist[])
 {
   int maxline = int(pow(spacelength, 3));
 
@@ -119,6 +124,10 @@ void cartesian_to_spherical(const char *fname, int spacelength)
 {
   int maxline = pow(spacelength, 3);
 
+  char pname[2048];
+  gen_print_name(fname, pname);
+  fprintf(stderr, "Reading data from '%s'... \n", pname);
+
   FILE *ifp = fopen(fname, "r");
   if (ifp == NULL)
   {
@@ -128,7 +137,7 @@ void cartesian_to_spherical(const char *fname, int spacelength)
 
   char ofname[2048];
   add_prefix(fname, "sphere", ofname);
-  fprintf(stderr, "Transfer data from '%s' to file '%s'... \n", fname, ofname);
+  fprintf(stderr, "Writing data to '%s'... \n", ofname);
 
   FILE *ofp = fopen(ofname, "w");
   if (ofp == NULL)
@@ -137,12 +146,16 @@ void cartesian_to_spherical(const char *fname, int spacelength)
     exit(1);
   }
 
-  for (size_t i = 0; i < maxline; i++)
+  char *line = NULL;
+  size_t len = 0;
+  while (getline(&line, &len, ifp) != -1) // Use getline() to get each line of data
   {
     double value, variance, distance = 0.0;
     int index, x, y, z = 0;
 
-    fscanf(ifp, "%02d %1.16e %1.16e\n", index, value, variance);
+    // !!! Important !!!
+    // To use (s)scanf to store value, destination should be a pointer!
+    sscanf(line, "%d %lf %lf\n", &index, &value, &variance);
 
     x = index % spacelength;
     index = (index - x) / spacelength;
@@ -152,8 +165,11 @@ void cartesian_to_spherical(const char *fname, int spacelength)
 
     distance = sqrt(pow(double(x), 2) + pow(double(y), 2) + pow(double(z), 2));
 
-    fprintf(ofp, "%1.16d %1.16e %1.16e\n", distance, value, variance);
+    fprintf(ofp, "%1.16e %1.16e %1.16e\n", distance, value, variance);
   }
+  if (line)
+    free(line);
+
   fclose(ifp);
   fclose(ofp);
 }

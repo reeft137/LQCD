@@ -8,31 +8,57 @@
 #include <math.h>
 #include <sys/types.h>
 
+typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
+typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
+
+COMPLEX CORR(const COMPLEX *data, int xsite, int ysite, int zsite, int spacelength)
+{
+  int x = (xsite + spacelength) % spacelength;
+  int y = (ysite + spacelength) % spacelength;
+  int z = (zsite + spacelength) % spacelength;
+  return data[x + spacelength * (y + spacelength * z)];
+}
+
+inline COMPLEX &TEST(COMPLEX *data, int index)
+{
+  return data[index];
+}
 
 int main(int argc, char *argv[])
 {
   argc--;
   argv++;
 
-  int xsite = 31;
-  int ysite = 12;
-  int zsite = 23;
+  using namespace std::complex_literals;
 
-  int spacelength = 32;
+  COMPLEX data[2];
+  data[0] = 2.0 + 1i;
+  data[1] = 3.5 + 4.5i;
 
-  int index = xsite + spacelength * (ysite + spacelength * zsite);
-  int x, y, z = 0;
+  fprintf(stderr, "data[0]: (%f, %fi)\n", data[0].real(), data[0].imag());
+  fprintf(stderr, "data[1]: (%f, %fi)\n", data[1].real(), data[1].imag());
 
-  x = index % spacelength;
-  index = (index - x) / spacelength;
-  y = index % spacelength;
-  index = (index - y) / spacelength;
-  z = index % spacelength;
+  TEST(data, 0) = data[1];
+  fprintf(stderr, "data[0]: (%f, %fi)\n", data[0].real(), data[0].imag());
+  fprintf(stderr, "data[1]: (%f, %fi)\n", data[1].real(), data[1].imag());
 
-  double distance = sqrt(pow(double(x), 2) + pow(double(y), 2) + pow(double(z), 2));
+  // int xsite = 31;
+  // int ysite = 12;
+  // int zsite = 23;
 
-  printf("%d %d %d %f\n", x, y, z, distance);
+  // int spacelength = 32;
+
+  // int index = xsite + spacelength * (ysite + spacelength * zsite);
+  // int x, y, z = 0;
+
+  // x = index % spacelength;
+  // index = (index - x) / spacelength;
+  // y = index % spacelength;
+  // index = (index - y) / spacelength;
+  // z = index % spacelength;
+
+  // double distance = sqrt(pow(double(x), 2) + pow(double(y), 2) + pow(double(z), 2));
 
   // FILE *fp = NULL;
   // fp = fopen("out.txt", "wb");
