@@ -247,6 +247,7 @@ int main(int argc, char *argv[])
       // {
       //   fprintf(fp, "4pt.v.%+03ld.sft%+03ld.gfix_C.%s \\\n", j, k*16, datalist[i]);
       // }
+      // fprintf(fp, ";\n\n");
     }
 
     for (size_t j = 0; j < 32; j++)
@@ -256,6 +257,12 @@ int main(int argc, char *argv[])
       fprintf(fp, "4pt.ps.%+03ld.gfix_C.%s \\\n", j, datalist[i]);
       fprintf(fp, "4pt.ps.%+03ld.gfix_C.%s \\\n", size_t(63 - j), datalist[i]);
       fprintf(fp, ";\n\n");
+
+      // fprintf(fp, "$LQCD_BASE_DIR/bin/pre -maxline 64 \\\n");
+      // fprintf(fp, "-ofname TR.4pt.v.%+03ld.gfix_C.%s \\\n", j, datalist[i]);
+      // fprintf(fp, "4pt.v.%+03ld.gfix_C.%s \\\n", j, datalist[i]);
+      // fprintf(fp, "4pt.v.%+03ld.gfix_C.%s \\\n", size_t(63 - j), datalist[i]);
+      // fprintf(fp, ";\n\n");
     }
   }
 

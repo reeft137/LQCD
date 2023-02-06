@@ -29,6 +29,14 @@ typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
 typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
 
-void a1_plus(const char *datalist[], int maxline, int N, char *r_datalist[]);
+// A1plus projection
+void a1_plus(const char *datalist[], int spacelength, int N, char *r_datalist[]);
+
+// Normalization
+void normalize(const char *datalist[], int spacelength, int N, char *r_datalist[]);
+
+// 4pt result finalize
+void cartesian_to_spherical(const char *fname, int spacelength);
+
 
 #endif

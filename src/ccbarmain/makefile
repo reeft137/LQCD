@@ -1,6 +1,7 @@
 OBJS=       \
 ccbarmain.o \
 jackknife.o \
+nbsmisc.o   \
 data_io.o   \
 misc.o
 

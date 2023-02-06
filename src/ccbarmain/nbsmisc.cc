@@ -26,135 +26,134 @@ typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
 typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
 
-// inline COMPLEX CORR(const COMPLEX* ptr, int ix, int iy, int iz, int Llength)
-// {
-//     ix = (ix + Llength) % Llength;
-//     iy = (iy + Llength) % Llength;
-//     iz = (iz + Llength) % Llength;
-
-//     return ptr[ix + Llength*(iy + Llength*iz)];
-// }
-
-// inline COMPLEX CORR2(const COMPLEX* ptr, int ix, int iy, int iz, int Llength)
-// {
-//       return CORR(ptr, ix, iy, iz, Llength)
-//         +    CORR(ptr, iy, iz, ix, Llength)
-//         +    CORR(ptr, iz, ix, iy, Llength)
-
-//         +    CORR(ptr, ix, iz, iy, Llength)
-//         +    CORR(ptr, iz, iy, ix, Llength)
-//         +    CORR(ptr, iy, ix, iz, Llength);
-// }
-
-void a1_plus(const char *datalist[], int maxline, int N, char *r_datalist[])
+// Inline functions
+// Extract the value of the correlation function on a specific space site
+inline COMPLEX CORR(const COMPLEX *data, int xsite, int ysite, int zsite, int spacelength)
 {
-  
+  xsite = (xsite + spacelength) % spacelength;
+  ysite = (ysite + spacelength) % spacelength;
+  zsite = (zsite + spacelength) % spacelength;
+  return data[xsite + spacelength * (ysite + spacelength * zsite)];
 }
 
-//     COMPLEX raw[xyzSites];
+inline double CORR(const double *data, int xsite, int ysite, int zsite, int spacelength)
+{
+  xsite = (xsite + spacelength) % spacelength;
+  ysite = (ysite + spacelength) % spacelength;
+  zsite = (zsite + spacelength) % spacelength;
+  return data[xsite + spacelength * (ysite + spacelength * zsite)];
+}
 
-//     // size_t len =
-//     fread(raw, sizeof(COMPLEX), xyzSites, ifp); // Use "fread" to read data
-//     // assert(len == xyzSites);
+// Simplification for the A1+ projection
+inline COMPLEX SPHERE(const COMPLEX *data, int xsite, int ysite, int zsite, int spacelength)
+{
+  return CORR(data, xsite, ysite, zsite, spacelength) + CORR(data, ysite, zsite, xsite, spacelength) + CORR(data, zsite, xsite, ysite, spacelength) + CORR(data, xsite, zsite, ysite, spacelength) + CORR(data, zsite, ysite, xsite, spacelength) + CORR(data, ysite, xsite, zsite, spacelength);
+}
 
-//     fclose(ifp);
+inline COMPLEX A1(const COMPLEX *data, int xsite, int ysite, int zsite, int spacelength)
+{
+  return SPHERE(data, xsite, ysite, zsite, spacelength) + SPHERE(data, xsite, ysite, spacelength - zsite, spacelength) + SPHERE(data, xsite, spacelength - ysite, zsite, spacelength) + SPHERE(data, xsite, spacelength - ysite, spacelength - zsite, spacelength) + SPHERE(data, spacelength - xsite, ysite, zsite, spacelength) + SPHERE(data, spacelength - xsite, ysite, spacelength - zsite, spacelength) + SPHERE(data, spacelength - xsite, spacelength - ysite, zsite, spacelength) + SPHERE(data, spacelength - xsite, spacelength - ysite, spacelength - zsite, spacelength);
+}
 
-//     // COMPLEX out[xyzSites];
-//     std::valarray<COMPLEX> out(xyzSites); out = 1.0e128;
+void a1_plus(const char *datalist[], int spacelength, int N, char *r_datalist[])
+{
+  int maxline = int(pow(spacelength, 3));
 
-// #define Corr(ptr, x, y, z)   \
-//     ((COMPLEX*)ptr)[((x)%Llength) + Llength*(((y)%Llength) + Llength*((z)%Llength))]
+  for (size_t i = 0; i < N; i++)
+  {
+    COMPLEX tmp[maxline], result[maxline];
+    for (size_t j = 0; j < maxline; j++) // Initialize the empty arrays
+    {
+      tmp[j] = result[j] = 0.0;
+    }
 
-//     for (int ix = 0; ix < Llength; ix++){
-//     for (int iy = 0; iy < Llength; iy++){
-//     for (int iz = 0; iz < Llength; iz++){
-//         Corr(&out[0], ix, iy, iz) = CORR2(raw,         ix,         iy,         iz, Llength)
-//                                    +CORR2(raw,         ix,         iy, Llength-iz, Llength)
-//                                    +CORR2(raw,         ix, Llength-iy,         iz, Llength)
-//                                    +CORR2(raw,         ix, Llength-iy, Llength-iz, Llength)
-//                                    +CORR2(raw, Llength-ix,         iy,         iz, Llength)
-//                                    +CORR2(raw, Llength-ix,         iy, Llength-iz, Llength)
-//                                    +CORR2(raw, Llength-ix, Llength-iy,         iz, Llength)
-//                                    +CORR2(raw, Llength-ix, Llength-iy, Llength-iz, Llength);
+    read_bin(datalist[i], maxline, tmp);
+    for (size_t ix = 0; ix < spacelength; ix++)
+    {
+      for (size_t iy = 0; iy < spacelength; iy++)
+      {
+        for (size_t iz = 0; iz < spacelength; iz++)
+        {
+          CORR(result, ix, iy, iz, spacelength) = A1(tmp, ix, iy, iz, spacelength);
+        }
+      }
+    }
 
-//     }}}
+    char ofname[2048];
+    add_prefix(datalist[i], "A1+", ofname);
 
-//     //---------------------------------------------------------------------------------
-//     /**
-//      * @brief Add "A1." prefix to the output filename
-//      *
-//      */
-//     //---------------------------------------------------------------------------------
-//     char tmp[1024];
-//     char dir[1024];
-//     char base[1024];
-//     char ofname[1024];
+    write_bin(ofname, maxline, result);
 
-//     strncpy(tmp, ifname, 1023);
-//     strncpy(dir, dirname(tmp), 1023);
-//     strncpy(tmp, ifname, 1023);
-//     strncpy(base, basename(tmp), 1023);
+    strncpy(r_datalist[i], ofname, 2047);
+  }
+}
 
-//     sprintf(ofname, "%s/A1.%s", dir, base);
+void normalize(const char *datalist[], int spacelength, int N, char *r_datalist[])
+{
+  int maxline = int(pow(spacelength, 3));
 
-//     //---------------------------------------------------------------------------------
-//     /**
-//      * @brief Write data to the txt file
-//      *
-//      */
-//     //---------------------------------------------------------------------------------
-//     FILE *ofp = NULL;
-//     ofp = fopen(ofname, "w");
+  for (size_t i = 0; i < N; i++)
+  {
+    COMPLEX tmp[maxline], result[maxline];
+    for (size_t j = 0; j < maxline; j++) // Initialize the empty arrays
+    {
+      tmp[j] = result[j] = 0.0;
+    }
 
-//     fwrite(&out[0], sizeof(COMPLEX), xyzSites, ofp);
+    read_bin(datalist[i], maxline, tmp);
+    for (size_t j = 0; j < maxline; j++)
+    {
+      result[j] = tmp[j] / sqrt(tmp[j] * std::conj(tmp[j]));
+    }
 
-//     fclose(ofp);
+    char ofname[2048];
+    add_prefix(datalist[i], "N2", ofname);
 
-//     return 0;
-// }
+    write_bin(ofname, maxline, result);
 
-// #define Corr(ptr, x, y, z) ((COMPLEX *)ptr)[(x) + maxline * ((y) + maxline * (z))]
+    strncpy(r_datalist[i], ofname, 2047);
+  }
+}
 
-//     FILE *fp = NULL;
-//     fp = fopen(corr_4pt, "rb");
+void cartesian_to_spherical(const char *fname, int spacelength)
+{
+  int maxline = pow(spacelength, 3);
 
-//     COMPLEX raw[maxline3];
+  FILE *ifp = fopen(fname, "r");
+  if (ifp == NULL)
+  {
+    perror(fname);
+    exit(1);
+  }
 
-//     fread(raw, sizeof(COMPLEX), maxline3, fp); // Use "fread" to read data
-//     fclose(fp);
+  char ofname[2048];
+  add_prefix(fname, "sphere", ofname);
+  fprintf(stderr, "Transfer data from '%s' to file '%s'... \n", fname, ofname);
 
-//     int sum = 0;
+  FILE *ofp = fopen(ofname, "w");
+  if (ofp == NULL)
+  {
+    perror(ofname);
+    exit(1);
+  }
 
-//     for (int i = 0; i < maxline / 2 + 1; i++)
-//       for (int j = i; j < maxline / 2 + 1; j++)
-//         for (int k = j; k < maxline / 2 + 1; k++)
-//         {
-//           sum++;
-//         }
+  for (size_t i = 0; i < maxline; i++)
+  {
+    double value, variance, distance = 0.0;
+    int index, x, y, z = 0;
 
-//     double leng[sum];
-//     double real[sum];
-//     double imag[sum];
+    fscanf(ifp, "%02d %1.16e %1.16e\n", index, value, variance);
 
-//     int index = 0;
+    x = index % spacelength;
+    index = (index - x) / spacelength;
+    y = index % spacelength;
+    index = (index - y) / spacelength;
+    z = index % spacelength;
 
-//     for (int ix = 0; ix < maxline / 2 + 1; ix++)
-//       for (int iy = ix; iy < maxline / 2 + 1; iy++)
-//         for (int iz = iy; iz < maxline / 2 + 1; iz++)
-//         {
-//           double temp = ix * ix + iy * iy + iz * iz;
-//           temp = pow(temp, 0.5);
-//           leng[index] = temp;
-//           real[index] = Corr(raw, ix, iy, iz).real();
-//           imag[index] = Corr(raw, ix, iy, iz).imag();
+    distance = sqrt(pow(double(x), 2) + pow(double(y), 2) + pow(double(z), 2));
 
-//           index++;
-//         }
-
-//     FILE *ofp = NULL;
-//     ofp = fopen("testresult.txt", "w");
-
-//     for (int i = 0; i < index; i++)
-//     {
-//       fprintf(ofp, "%1.16e %1.16e\n", leng[i], real[i]);
-//     }
+    fprintf(ofp, "%1.16d %1.16e %1.16e\n", distance, value, variance);
+  }
+  fclose(ifp);
+  fclose(ofp);
+}

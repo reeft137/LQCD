@@ -98,9 +98,9 @@ int main(int argc, char *argv[])
 
     if (strcmp(argv[0], "-effmass") == 0)
     {
-      effmass = argv[1];
-      argc -= 2;
-      argv += 2;
+      effmass = "effmass";
+      argc--;
+      argv++;
       continue;
     }
 
@@ -170,6 +170,8 @@ int main(int argc, char *argv[])
     // Do time reverse and Jackknife resampling
     time_reverse_2pt(argv, maxline, N, tr_tmp_datalist);
     jackknife_resample(tr_tmp_datalist, maxline, N, js_tmp_datalist);
+
+    // Generate the 2pt correlation function
     jackknife_average(js_tmp_datalist, maxline, N, corr_2pt);
 
     // Calculate the effective mass (exp and cosh types)
@@ -189,9 +191,30 @@ int main(int argc, char *argv[])
       }
 
       // Something from effmass.h
+      /*
+      sadfsafdsfsdafsa
+      asdfdsafdsa
+      fd
+      */
 
       jackknife_average(em_tmp_datalist, maxline, N, expmass);
       jackknife_average(hm_tmp_datalist, maxline, N, coshmass);
+
+      // Remove temporary files
+      for (size_t i = 0; i < N; i++)
+      {
+        if (remove(em_tmp_datalist[i]))
+          perror(em_tmp_datalist[i]);
+        if (remove(hm_tmp_datalist[i]))
+          perror(hm_tmp_datalist[i]);
+      }
+
+      // Finalization for the string arrays
+      for (size_t i = 0; i < N; i++)
+      {
+        free(em_tmp_datalist[i]);
+        free(hm_tmp_datalist[i]);
+      }
     }
 
     // Fit the mass and get the final result
@@ -199,11 +222,13 @@ int main(int argc, char *argv[])
     {
     }
 
-    // Delete the temporary files
+    // Remove temporary files
     for (size_t i = 0; i < N; i++)
     {
       if (remove(tr_tmp_datalist[i]))
         perror(tr_tmp_datalist[i]);
+      if (remove(js_tmp_datalist[i]))
+        perror(js_tmp_datalist[i]);
     }
 
     // Finalization for the string arrays
@@ -217,35 +242,52 @@ int main(int argc, char *argv[])
   // DATA ANALYSING ON 4PT CORRELATION FUNCTIONS
   if (corr_4pt)
   {
-    char *a1_tmp_datalist[N], *js_tmp_datalist[N];
+    // Create some string arrays for temparory file names (A1+ data, jackknife resampled data...)
+    char *a1_tmp_datalist[N], *n2_tmp_datalist[N], *js_tmp_datalist[N];
     for (size_t i = 0; i < N; i++)
     {
       a1_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
-      strncpy(tr_tmp_datalist[i], argv[i], 2047);
+      strncpy(a1_tmp_datalist[i], argv[i], 2047);
+      n2_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
+      strncpy(n2_tmp_datalist[i], argv[i], 2047);
       js_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
       strncpy(js_tmp_datalist[i], argv[i], 2047);
     }
 
+    // Length of the data of space correlators
     int maxline3 = int(pow(maxline, 3));
 
-    jackknife_resample(argv, maxline3, N, js_tmp_datalist);
+    // A1+ projection and normalization
+    a1_plus(argv, maxline, N, a1_tmp_datalist);
+    normalize(a1_tmp_datalist, maxline, N, n2_tmp_datalist);
 
-    fprintf(stderr, "Yeh!");
+    // Calculate correlators
+    jackknife_resample(n2_tmp_datalist, maxline3, N, js_tmp_datalist);
+    jackknife_average(js_tmp_datalist, maxline, N, corr_4pt);
+    cartesian_to_spherical(corr_4pt, maxline);
 
-    jackknife_average(js_tmp_datalist, maxline3, N, corr_4pt);
+    // Kawanai-Sasaki method
 
-    fprintf(stderr, "Yeh!");
-
+    // Watanabe method
+    
+    // Remove temporary files
     for (size_t i = 0; i < N; i++)
     {
+      if (remove(a1_tmp_datalist[i]))
+        perror(a1_tmp_datalist[i]);
+      if (remove(n2_tmp_datalist[i]))
+        perror(n2_tmp_datalist[i]);
       if (remove(js_tmp_datalist[i]))
         perror(js_tmp_datalist[i]);
     }
+    if (remove(corr_4pt))
+      perror(corr_4pt);
 
     // Finalization for the string arrays
     for (size_t i = 0; i < N; i++)
     {
       free(a1_tmp_datalist[i]);
+      free(n2_tmp_datalist[i]);
       free(js_tmp_datalist[i]);
     }
   }
