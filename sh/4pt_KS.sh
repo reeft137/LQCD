@@ -5,18 +5,19 @@ SPACESITES=32
 TYPE=ps
 
 cd $DATA_DIR
-rm -rf correlator_result
+rm -rf corr_4pt_result
 
 for i in $(ls); do
   echo "Processing with \"$i\"..."
 
-  $LQCD_BASE_DIR/bin/ccbarmain -maxline $SPACESITES -corr_4pt ./$i.4ptcorr.$TYPE $i/TR.*
+  # $LQCD_BASE_DIR/bin/space_corr -spacelength $SPACESITES -corr ./$i.4ptcorr.$TYPE $i/TR.*
+  $LQCD_BASE_DIR/bin/space_corr -spacelength $SPACESITES -corr ./$i.4ptcorr.$TYPE $i/4pt.*
   
   mv $i/$i.4ptcorr.$TYPE ./
 done
 
-mkdir correlator_result
-mv *.4ptcorr.* correlator_result
+mkdir corr_4pt_result
+mv *.4ptcorr.* corr_4pt_result
 
 echo "*******-------*******-------*******-------*******-------*******"
 echo "Finished! "

@@ -36,6 +36,7 @@ void usage(char *name)
           name);
   fprintf(stderr, "OPTIONS: \n"
                   "    -spacelength (int):  total# of space sites\n"
+                  "    -corr (ofname):      output file name of correlator"
                   "    [-h, --help]:        see usage\n");
 }
 
@@ -48,16 +49,17 @@ COMPLEX sphere_sym(COMPLEX *data, int x, int y, int z, int spacelength);
 COMPLEX a1_sym(COMPLEX *data, int x, int y, int z, int spacelength);
 
 // A1+ projection main
-void a1_plus(char *datalist[], int spacelength, int file_total, char *r_datalist[]);
+void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int file_total);
 
 // N2 normalization
-void normalization(char *datalist[], int spacelength, int file_total, char *r_datalist[]);
+void normalization(char *datalist[], char *r_datalist[], int spacelength, int file_total);
 
 // Change to spherical coordinate
-void cartesian_to_spherical(const char *fname, int spacelength);
+void cartesian_to_spherical(const char *ifname, const char *ofname, int spacelength);
 
 // Global variables to store the contents of options
 int spacelength = 0;
+static const char *corr = NULL;
 
 int main(int argc, char *argv[])
 {
@@ -88,6 +90,14 @@ int main(int argc, char *argv[])
       continue;
     }
 
+    if (strcmp(argv[0], "-corr") == 0)
+    {
+      corr = argv[1];
+      argc -= 2;
+      argv += 2;
+      continue;
+    }
+
     fprintf(stderr, "Error: Unknown option '%s'\n", argv[0]);
     exit(1);
   }
@@ -99,7 +109,10 @@ int main(int argc, char *argv[])
   }
 
   // Initialization
-  int file_total = argc; // total # of files
+  const int file_total = argc; // total # of files
+  fprintf(stderr, "##################################################\n");
+  fprintf(stderr, "# Total of configurations: %d\n", file_total);
+  fprintf(stderr, "##################################################\n\n");
 
   // Main Body
   // Create some string arrays for temparory file names (A1+ data, jackknife resampled data...)
@@ -108,29 +121,57 @@ int main(int argc, char *argv[])
   {
     a1_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
     add_prefix(argv[i], "A1+", a1_tmp_datalist[i]);
-    n2_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
+    n2_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char));
     add_prefix(argv[i], "n2", n2_tmp_datalist[i]);
-    js_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
+    js_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char));
     add_prefix(argv[i], "js", js_tmp_datalist[i]);
   }
 
   // Length of the data of space correlators
-  int maxline = int(pow(spacelength, 3));
 
   // A1+ projection and normalization
-  a1_plus(argv, spacelength, file_total, a1_tmp_datalist);
-  normalization(a1_tmp_datalist, spacelength, file_total, n2_tmp_datalist);
+  fprintf(stderr, "##################################################\n");
+  fprintf(stderr, "A1+ projection\n");
+  fprintf(stderr, "##################################################\n\n");
+  a1_plus(argv, a1_tmp_datalist, spacelength, file_total);
+  fprintf(stderr, "Finished! \n\n");
 
+  // fprintf(stderr, "##################################################\n");
+  // fprintf(stderr, "Normalization\n");
+  // fprintf(stderr, "##################################################\n\n");
+  // normalization(a1_tmp_datalist, n2_tmp_datalist, spacelength, file_total);
+  // fprintf(stderr, "Finished! \n\n");
+
+  int maxline = int(pow(spacelength, 3));
   // Calculate correlators
-  jackknife_resample(n2_tmp_datalist, js_tmp_datalist, file_total, maxline);
-  jackknife_average(js_tmp_datalist, "correlator_4pt", file_total, maxline);
-  cartesian_to_spherical("correlator_4pt", spacelength);
+  fprintf(stderr, "##################################################\n");
+  fprintf(stderr, "Jackknife resample\n");
+  fprintf(stderr, "##################################################\n\n");
+  jackknife_resample(a1_tmp_datalist, js_tmp_datalist, maxline, file_total);
+  fprintf(stderr, "Finished! \n\n");
+
+  fprintf(stderr, "##################################################\n");
+  fprintf(stderr, "Jackknife average\n");
+  fprintf(stderr, "##################################################\n\n");
+  char tmp_result[2047];
+  add_prefix(corr, "tmp", tmp_result);
+  jackknife_average(js_tmp_datalist, tmp_result, maxline, file_total);
+  fprintf(stderr, "Finished! \n\n");
+
+  fprintf(stderr, "##################################################\n");
+  fprintf(stderr, "Finalize the final result\n");
+  fprintf(stderr, "##################################################\n\n");
+  cartesian_to_spherical(tmp_result, corr, spacelength);
+  fprintf(stderr, "Finished! \n\n");
 
   // Kawanai-Sasaki method
 
   // Watanabe method
 
   // Remove temporary files
+  fprintf(stderr, "##################################################\n");
+  fprintf(stderr, "Remove temporary files\n");
+  fprintf(stderr, "##################################################\n\n");
   for (size_t i = 0; i < file_total; i++)
   {
     if (remove(a1_tmp_datalist[i]))
@@ -140,8 +181,9 @@ int main(int argc, char *argv[])
     if (remove(js_tmp_datalist[i]))
       perror(js_tmp_datalist[i]);
   }
-  if (remove("correlator_4pt"))
-    perror("correlator_4pt");
+  if (remove(tmp_result))
+    perror(tmp_result);
+  fprintf(stderr, "Finished! \n\n");
 
   // Finalization for the string arrays
   for (size_t i = 0; i < file_total; i++)
@@ -174,7 +216,7 @@ inline COMPLEX a1_sym(COMPLEX *data, int x, int y, int z, int spacelength)
   return (sphere_sym(data, x, y, z, spacelength) + sphere_sym(data, x, y, spacelength - z, spacelength) + sphere_sym(data, x, spacelength - y, z, spacelength) + sphere_sym(data, x, spacelength - y, spacelength - z, spacelength) + sphere_sym(data, spacelength - x, y, z, spacelength) + sphere_sym(data, spacelength - x, y, spacelength - z, spacelength) + sphere_sym(data, spacelength - x, spacelength - y, z, spacelength) + sphere_sym(data, spacelength - x, spacelength - y, spacelength - z, spacelength)) / 8.0;
 }
 
-void a1_plus(char *datalist[], int spacelength, int file_total, char *r_datalist[])
+void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int file_total)
 {
   int maxline = int(pow(spacelength, 3));
 
@@ -199,7 +241,7 @@ void a1_plus(char *datalist[], int spacelength, int file_total, char *r_datalist
   }
 }
 
-void normalization(char *datalist[], int spacelength, int file_total, char *r_datalist[])
+void normalization(char *datalist[], char *r_datalist[], int spacelength, int file_total)
 {
   int maxline = int(pow(spacelength, 3));
 
@@ -221,7 +263,7 @@ void normalization(char *datalist[], int spacelength, int file_total, char *r_da
   }
 }
 
-void cartesian_to_spherical(const char *fname, int spacelength)
+void cartesian_to_spherical(const char *ifname, const char *ofname, int spacelength)
 {
   int maxline = pow(spacelength, 3);
 
@@ -230,42 +272,31 @@ void cartesian_to_spherical(const char *fname, int spacelength)
   {
     tmp[j] = 0.0;
   }
-  read_bin(fname, maxline, tmp);
+  read_bin(ifname, maxline, tmp);
 
-  char ofname[2048];
-  add_prefix(fname, "sphere", ofname);
-  fprintf(stderr, "Writing data to '%s'... \n", ofname);
+  char pname[2048];
+  gen_print_name(ofname, pname);
+  fprintf(stderr, "Writing data to '%s'... \n", pname);
 
-  FILE *ofp = fopen(ofname, "w");
-  if (ofp == NULL)
+  FILE *fp = fopen(ofname, "w");
+  if (fp == NULL)
   {
     perror(ofname);
     exit(1);
   }
 
-  int line_need = 0;
   for (size_t i = 0; i < spacelength / 2 + 1; i++)
     for (size_t j = i; j < spacelength / 2 + 1; j++)
-      for (size_t k = k; k < spacelength / 2 + 1; k++)
+      for (size_t k = j; k < spacelength / 2 + 1; k++)
       {
-        line_need++;
+        double value, variance, distance = 0.0;
+
+        distance = sqrt(pow(double(i), 2) + pow(double(j), 2) + pow(double(k), 2));
+        value = correlator(tmp, i, j, k, spacelength).real();
+        variance = correlator(tmp, i, j, k, spacelength).imag();
+
+        fprintf(fp, "%1.16e %1.16e %1.16e\n", distance, value, variance);
       }
 
-  for (size_t i = 0; i < line_need; i++)
-  {
-    double value, variance, distance = 0.0;
-    int x, y, z = 0;
-
-    x = i % spacelength;
-    i = (i - x) / spacelength;
-    y = i % spacelength;
-    i = (i - y) / spacelength;
-    z = i % spacelength;
-
-    distance = sqrt(pow(double(x), 2) + pow(double(y), 2) + pow(double(z), 2));
-
-    fprintf(ofp, "%1.16e %1.16e %1.16e\n", distance, value, variance);
-  }
-
-  fclose(ofp);
+  fclose(fp);
 }

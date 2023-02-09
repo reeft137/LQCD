@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd $1
+
 mkdir 00
 mv *.+00.* 00
 mkdir 01
