@@ -1,7 +1,7 @@
 /**
- * @file ccbarmain.cc
+ * @file time_corr.cc
  * @author TC (reeft137@gmail.com)
- * @brief Main function for calculating the mass and potential of ccbar meson
+ * @brief Main program to calculate the mass of ccbar meson
  * @version 0.1
  * @date 2023-02-02
  *
@@ -23,7 +23,6 @@
 // Custom libraries
 #include "data_io.h"
 #include "jackknife.h"
-#include "nbsmisc.h"
 #include "misc.h"
 
 // Rename some lengthy type name
@@ -38,16 +37,9 @@ void usage(char *name)
                   "    %s [OPTIONS] ifname_1 ifname_2 [ifname_3...]\n",
           name);
   fprintf(stderr, "OPTIONS: \n"
-                  "  MAN: \n"
-                  "    [-h, --help]:           see usage\n"
-                  "  2PT: \n"
-                  "    [-corr_2pt] (ofname):   filename for the result of 2pt correlator\n"
-                  "    [-effmass] (ofname):    filename for the result of effective mass\n"
-                  "    [-fit_range] (min max): set the range for fitting mass\n"
-                  "  4PT: \n"
-                  "    [-corr_4pt] (ofname):   filename for the result of 4pt correlator\n"
-                  "  MUST: \n"
-                  "    -maxline (maxline):     2pt: # of time sites; 4pt: # of space sites\n");
+                  "    -timelength (int):       total # of time sites\n"
+                  "    [-h, --help]:            see usage\n"
+                  "    [-fit_range] (min max):  do fit and set the range for fitting mass\n");
 }
 
 // Custom functions and inline functions (to make code concise)
@@ -61,13 +53,12 @@ inline void mkchdir(const char *destination)
 }
 
 // Time reversal
-void time_reverse_2pt(char *datalist[], int maxline, int N, char *r_datalist[]);
+void time_reverse_2pt(char *datalist[], int timelength, int file_total, char *r_datalist[]);
 
 // Global variables to store the contents of options
-static const char *corr_2pt = NULL;
+static const char *correlator = NULL;
 static const char *effmass = NULL;
-static const char *corr_4pt = NULL;
-int maxline = 0;
+int timelength = 0;
 int fitmin = 0;
 int fitmax = 0;
 bool fit_do = false;
@@ -88,9 +79,9 @@ int main(int argc, char *argv[])
       exit(0);
     }
 
-    if (strcmp(argv[0], "-corr_2pt") == 0)
+    if (strcmp(argv[0], "-correlator") == 0)
     {
-      corr_2pt = argv[1];
+      correlator = argv[1];
       argc -= 2;
       argv += 2;
       continue;
@@ -101,14 +92,6 @@ int main(int argc, char *argv[])
       effmass = "effmass";
       argc--;
       argv++;
-      continue;
-    }
-
-    if (strcmp(argv[0], "-corr_4pt") == 0)
-    {
-      corr_4pt = argv[1];
-      argc -= 2;
-      argv += 2;
       continue;
     }
 
@@ -127,10 +110,10 @@ int main(int argc, char *argv[])
       continue;
     }
 
-    if (strcmp(argv[0], "-maxline") == 0)
+    if (strcmp(argv[0], "-timelength") == 0)
     {
-      maxline = atoi(argv[1]); // atoi(): convert ASCII string to integer
-      if (!maxline)
+      timelength = atoi(argv[1]); // atoi(): convert ASCII string to integer
+      if (!timelength)
       {
         usage(program_name);
         exit(1);
@@ -151,15 +134,15 @@ int main(int argc, char *argv[])
   }
 
   // Initialization
-  int N = argc; // # of data files
+  int file_total = argc; // # of data files
 
   // Main Body
-  // DATA ANALYSING ON 2PT CORRELATION FUNCTIONS
-  if (corr_2pt)
+  // DATA ANALYSIS ON 2PT CORRELATION FUNCTIONS
+  if (correlator)
   {
     // Create some string arrays for temparory file names (time reversed data, jackknife resampled data...)
-    char *tr_tmp_datalist[N], *js_tmp_datalist[N];
-    for (size_t i = 0; i < N; i++)
+    char *tr_tmp_datalist[file_total], *js_tmp_datalist[file_total];
+    for (size_t i = 0; i < file_total; i++)
     {
       tr_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
       strncpy(tr_tmp_datalist[i], argv[i], 2047);
@@ -168,11 +151,11 @@ int main(int argc, char *argv[])
     }
 
     // Do time reverse and Jackknife resampling
-    time_reverse_2pt(argv, maxline, N, tr_tmp_datalist);
-    jackknife_resample(tr_tmp_datalist, maxline, N, js_tmp_datalist);
+    time_reverse_2pt(argv, timelength, file_total, tr_tmp_datalist);
+    jackknife_resample(tr_tmp_datalist, timelength, file_total, js_tmp_datalist);
 
     // Generate the 2pt correlation function
-    jackknife_average(js_tmp_datalist, maxline, N, corr_2pt);
+    jackknife_average(js_tmp_datalist, timelength, file_total, correlator);
 
     // Calculate the effective mass (exp and cosh types)
     if (effmass)
@@ -181,8 +164,8 @@ int main(int argc, char *argv[])
       add_prefix(effmass, "exp", expmass);
       add_prefix(effmass, "cosh", coshmass);
 
-      char *em_tmp_datalist[N], *hm_tmp_datalist[N];
-      for (size_t i = 0; i < N; i++)
+      char *em_tmp_datalist[file_total], *hm_tmp_datalist[file_total];
+      for (size_t i = 0; i < file_total; i++)
       {
         em_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
         strncpy(em_tmp_datalist[i], argv[i], 2047);
@@ -197,11 +180,11 @@ int main(int argc, char *argv[])
       fd
       */
 
-      jackknife_average(em_tmp_datalist, maxline, N, expmass);
-      jackknife_average(hm_tmp_datalist, maxline, N, coshmass);
+      jackknife_average(em_tmp_datalist, timelength, file_total, expmass);
+      jackknife_average(hm_tmp_datalist, timelength, file_total, coshmass);
 
       // Remove temporary files
-      for (size_t i = 0; i < N; i++)
+      for (size_t i = 0; i < file_total; i++)
       {
         if (remove(em_tmp_datalist[i]))
           perror(em_tmp_datalist[i]);
@@ -210,7 +193,7 @@ int main(int argc, char *argv[])
       }
 
       // Finalization for the string arrays
-      for (size_t i = 0; i < N; i++)
+      for (size_t i = 0; i < file_total; i++)
       {
         free(em_tmp_datalist[i]);
         free(hm_tmp_datalist[i]);
@@ -223,7 +206,7 @@ int main(int argc, char *argv[])
     }
 
     // Remove temporary files
-    for (size_t i = 0; i < N; i++)
+    for (size_t i = 0; i < file_total; i++)
     {
       if (remove(tr_tmp_datalist[i]))
         perror(tr_tmp_datalist[i]);
@@ -232,62 +215,9 @@ int main(int argc, char *argv[])
     }
 
     // Finalization for the string arrays
-    for (size_t i = 0; i < N; i++)
+    for (size_t i = 0; i < file_total; i++)
     {
       free(tr_tmp_datalist[i]);
-      free(js_tmp_datalist[i]);
-    }
-  }
-
-  // DATA ANALYSING ON 4PT CORRELATION FUNCTIONS
-  if (corr_4pt)
-  {
-    // Create some string arrays for temparory file names (A1+ data, jackknife resampled data...)
-    char *a1_tmp_datalist[N], *n2_tmp_datalist[N], *js_tmp_datalist[N];
-    for (size_t i = 0; i < N; i++)
-    {
-      a1_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
-      strncpy(a1_tmp_datalist[i], argv[i], 2047);
-      n2_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
-      strncpy(n2_tmp_datalist[i], argv[i], 2047);
-      js_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
-      strncpy(js_tmp_datalist[i], argv[i], 2047);
-    }
-
-    // Length of the data of space correlators
-    int maxline3 = int(pow(maxline, 3));
-
-    // A1+ projection and normalization
-    a1_plus(argv, maxline, N, a1_tmp_datalist);
-    normalize(a1_tmp_datalist, maxline, N, n2_tmp_datalist);
-
-    // Calculate correlators
-    jackknife_resample(n2_tmp_datalist, maxline3, N, js_tmp_datalist);
-    jackknife_average(js_tmp_datalist, maxline3, N, corr_4pt);
-    cartesian_to_spherical(corr_4pt, maxline);
-
-    // Kawanai-Sasaki method
-
-    // Watanabe method
-    
-    // Remove temporary files
-    for (size_t i = 0; i < N; i++)
-    {
-      if (remove(a1_tmp_datalist[i]))
-        perror(a1_tmp_datalist[i]);
-      if (remove(n2_tmp_datalist[i]))
-        perror(n2_tmp_datalist[i]);
-      if (remove(js_tmp_datalist[i]))
-        perror(js_tmp_datalist[i]);
-    }
-    if (remove(corr_4pt))
-      perror(corr_4pt);
-
-    // Finalization for the string arrays
-    for (size_t i = 0; i < N; i++)
-    {
-      free(a1_tmp_datalist[i]);
-      free(n2_tmp_datalist[i]);
       free(js_tmp_datalist[i]);
     }
   }
@@ -296,24 +226,65 @@ int main(int argc, char *argv[])
 }
 
 // Definition for the time_reverse_2pt function
-void time_reverse_2pt(char *datalist[], int maxline, int N, char *r_datalist[])
+void time_reverse_2pt(char *datalist[], int timelength, int file_total, char *r_datalist[])
 {
-  for (int i = 0; i < N; i++)
+  for (int i = 0; i < file_total; i++)
   {
     VARRAY_COMPLEX data;
     data = 0.0;
-    read_bin(datalist[i], maxline, data);
+    read_bin(datalist[i], timelength, data);
 
-    for (size_t i = 0; i < maxline / 2 + 1; i++)
+    for (size_t i = 0; i < timelength / 2 + 1; i++)
     {
-      data[i] = (data[i] + data[(maxline - i) % maxline]) * 0.5;
+      data[i] = (data[i] + data[(timelength - i) % timelength]) * 0.5;
     }
 
     char ofname[2048];
     add_prefix(datalist[i], "TR", ofname);
 
-    write_bin(ofname, maxline, data);
+    write_bin(ofname, timelength, data);
 
     strncpy(r_datalist[i], ofname, 2047);
   }
+}
+
+// Write to txt file
+void write_txt(const char *fname, int timelength, const COMPLEX *data)
+{
+  char pname[2048];
+  gen_print_name(fname, pname);
+  fprintf(stderr, "Writing data to file '%s'... \n", pname);
+
+  FILE *fp = fopen(fname, "wb");
+  if (fp == NULL)
+  {
+    perror(fname);
+    exit(1);
+  }
+
+  for (size_t i = 0; i < timelength; i++)
+  {
+    fprintf(fp, "%d %1.16e %1.16e\n", i, data[i].real(), data[i].imag());
+  }
+  fclose(fp);
+}
+
+void write_txt(const char *fname, int timelength, const VARRAY_COMPLEX &data)
+{
+  char pname[2048];
+  gen_print_name(fname, pname);
+  fprintf(stderr, "Writing data to file '%s'... \n", pname);
+
+  FILE *fp = fopen(fname, "wb");
+  if (fp == NULL)
+  {
+    perror(fname);
+    exit(1);
+  }
+
+  for (size_t i = 0; i < timelength; i++)
+  {
+    fprintf(fp, "%d %1.16e %1.16e\n", i, data[i].real(), data[i].imag());
+  }
+  fclose(fp);
 }

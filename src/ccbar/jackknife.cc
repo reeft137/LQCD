@@ -9,18 +9,10 @@
  */
 //---------------------------------------------------------------------
 
-// C libraries
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
-#include <libgen.h>
-
-// C++ libraries
 #include <complex>
 #include <valarray>
-
-// Custom libraries
 #include "data_io.h"
 #include "misc.h"
 
@@ -38,7 +30,7 @@ void keep_real(VARRAY_COMPLEX &data, VARRAY_DOUBLE &rdata, int maxline)
 }
 
 // Jackknife sample
-void jackknife_resample(char *datalist[], int maxline, int N, char *r_datalist[])
+void jackknife_resample(char *datalist[], char *result_datalist[], int maxline, int N)
 {
   VARRAY_DOUBLE sum(maxline), sum_square(maxline), value(maxline), var(maxline);
   sum = sum_square = value = var = 0.0;
@@ -59,7 +51,7 @@ void jackknife_resample(char *datalist[], int maxline, int N, char *r_datalist[]
   }
 
   // Second round: Generate the Jackknife sampled data and calculate the variance
-  //               Also, save files and copy the file name to r_datalist[]
+  //               Also, save files to r_datalist[]
   for (int i = 0; i < N; i++)
   {
     VARRAY_COMPLEX tmp(maxline);
@@ -71,6 +63,7 @@ void jackknife_resample(char *datalist[], int maxline, int N, char *r_datalist[]
     keep_real(tmp, rtmp, maxline);
 
     value = (sum - rtmp) / (N - 1.0);
+    // About this variance, please refer to eq.(7.37) on P.383, Montvay LQCD book
     var = sqrt(((sum_square - pow(rtmp, 2)) / double(N - 1.0) - pow(value, 2)) / double(N - 2.0));
 
     VARRAY_COMPLEX result(maxline);
@@ -82,16 +75,13 @@ void jackknife_resample(char *datalist[], int maxline, int N, char *r_datalist[]
     }
 
     char ofname[2048];
-    add_prefix(datalist[i], "js", ofname);
 
-    write_bin(ofname, maxline, result);
-
-    strncpy(r_datalist[i], ofname, 2047);
+    write_bin(result_datalist[i], maxline, result);
   }
 }
 
 // Jackknife average
-void jackknife_average(char *datalist[], int maxline, int N, const char *ofname)
+void jackknife_average(char *datalist[], const char *result_fname, int maxline, int N)
 {
   VARRAY_DOUBLE mean(maxline), var(maxline);
   mean = var = 0.0;
@@ -140,5 +130,5 @@ void jackknife_average(char *datalist[], int maxline, int N, const char *ofname)
     result[i].imag(var[i]);
   }
 
-  write_txt(ofname, maxline, result);
+  write_bin(result_fname, maxline, result);
 }

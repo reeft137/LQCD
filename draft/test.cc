@@ -12,36 +12,48 @@ typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
 typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
 
-COMPLEX CORR(const COMPLEX *data, int xsite, int ysite, int zsite, int spacelength)
-{
-  int x = (xsite + spacelength) % spacelength;
-  int y = (ysite + spacelength) % spacelength;
-  int z = (zsite + spacelength) % spacelength;
-  return data[x + spacelength * (y + spacelength * z)];
-}
+// COMPLEX CORR(const COMPLEX *data, int xsite, int ysite, int zsite, int spacelength)
+// {
+//   int x = (xsite + spacelength) % spacelength;
+//   int y = (ysite + spacelength) % spacelength;
+//   int z = (zsite + spacelength) % spacelength;
+//   return data[x + spacelength * (y + spacelength * z)];
+// }
 
-inline COMPLEX &TEST(COMPLEX *data, int index)
-{
-  return data[index];
-}
+// inline COMPLEX &TEST(COMPLEX *data, int index)
+// {
+//   return data[index];
+// }
 
 int main(int argc, char *argv[])
 {
   argc--;
   argv++;
 
-  using namespace std::complex_literals;
+  // using namespace std::complex_literals;
 
-  COMPLEX data[2];
-  data[0] = 2.0 + 1i;
-  data[1] = 3.5 + 4.5i;
+  // COMPLEX data[2];
+  // data[0].real(16.0);
+  // data[0].imag(4.0);
+  // // data[1] = 3.5 + 4.5i;
+  // data[0] = data[0] / 4.0;
 
-  fprintf(stderr, "data[0]: (%f, %fi)\n", data[0].real(), data[0].imag());
-  fprintf(stderr, "data[1]: (%f, %fi)\n", data[1].real(), data[1].imag());
+  // fprintf(stderr, "data[0]: (%f, %fi)\n", data[0].real(), data[0].imag());
+  // fprintf(stderr, "data[1]: (%f, %fi)\n", data[1].real(), data[1].imag());
 
-  TEST(data, 0) = data[1];
-  fprintf(stderr, "data[0]: (%f, %fi)\n", data[0].real(), data[0].imag());
-  fprintf(stderr, "data[1]: (%f, %fi)\n", data[1].real(), data[1].imag());
+  int out = 0.0;
+  for (size_t i = 0; i < 17; i++)
+  for (size_t j = i; j < 17; j++)
+  for (size_t k = j; k < 17; k++)
+  {
+    out ++;
+  }
+  
+
+  fprintf(stderr, "total: %d\n", out);
+
+  // fprintf(stderr, "data[0]: (%f, %fi)\n", data[0].real(), data[0].imag());
+  // fprintf(stderr, "data[1]: (%f, %fi)\n", data[1].real(), data[1].imag());
 
   // int xsite = 31;
   // int ysite = 12;

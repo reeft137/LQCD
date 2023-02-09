@@ -1,11 +1,10 @@
 /**
  * @file data_io.h
  * @author TC (reeft137@gmail.com)
- * @brief Read and write data (binary files and txt files). 
- *        Provide 3 functions: 
+ * @brief Read and write data (binary files). 
+ *        Provide 2 functions: 
  *        void read_bin(): Read data from binary file; 
  *        void write_bin(): Write data to binary file; 
- *        void write_txt(): Write data to txt file. 
  * @version 0.1
  * @date 2023-01-17
  *
@@ -46,10 +45,5 @@ void write_bin(const char *fname, int maxline, const COMPLEX *data);
 void write_bin(const char *fname, int maxline, const VARRAY_DOUBLE &data);
 
 void write_bin(const char *fname, int maxline, const VARRAY_COMPLEX &data);
-
-// Write to txt file
-void write_txt(const char *fname, int maxline, const COMPLEX *data);
-
-void write_txt(const char *fname, int maxline, const VARRAY_COMPLEX &data);
 
 #endif
