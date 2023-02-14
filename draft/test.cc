@@ -30,27 +30,33 @@ int main(int argc, char *argv[])
   argc--;
   argv++;
 
-  // using namespace std::complex_literals;
+  using namespace std::complex_literals;
 
-  // COMPLEX data[2];
-  // data[0].real(16.0);
-  // data[0].imag(4.0);
-  // // data[1] = 3.5 + 4.5i;
+  double data[4] = {1.0, 2.0, 3.0, 4.0};
   // data[0] = data[0] / 4.0;
 
+  double *out_d = NULL;
+  double *out_c = NULL;
+
+  out_d = &data[1];
+  // out_c = &data[1];
+  out_c = (double *)&((COMPLEX *)data)[1];
+
+  fprintf(stderr, "(%f, %f), (%f, %f)\n", data[0], data[1], data[3], data[4]);
+  fprintf(stderr, "out_d: %p\nout_c: %p\n", out_d, out_c);
+  fprintf(stderr, "out_d: %f\nout_c: %f\n", *out_d, *out_c);
   // fprintf(stderr, "data[0]: (%f, %fi)\n", data[0].real(), data[0].imag());
   // fprintf(stderr, "data[1]: (%f, %fi)\n", data[1].real(), data[1].imag());
 
-  int out = 0.0;
-  for (size_t i = 0; i < 17; i++)
-  for (size_t j = i; j < 17; j++)
-  for (size_t k = j; k < 17; k++)
-  {
-    out ++;
-  }
-  
+  // int out = 0.0;
+  // for (size_t i = 0; i < 17; i++)
+  // for (size_t j = i; j < 17; j++)
+  // for (size_t k = j; k < 17; k++)
+  // {
+  //   out ++;
+  // }
 
-  fprintf(stderr, "total: %d\n", out);
+  // COMPLEX test_array[3];
 
   // fprintf(stderr, "data[0]: (%f, %fi)\n", data[0].real(), data[0].imag());
   // fprintf(stderr, "data[1]: (%f, %fi)\n", data[1].real(), data[1].imag());
