@@ -3,13 +3,13 @@ jackknife.o \
 data_io.o   \
 misc.o
 
-all: space_corr
+all: corr4+lap
 
-space_corr: $(LIBOFILE) space_corr.o
-	$(CXX) -o $@ $(CXXFLAGS) $(LIBOFILE) space_corr.o
-time_corr: $(LIBOFILE) time_corr.o
-	$(CXX) -o $@ $(CXXFLAGS) $(LIBOFILE) time_corr.o
+corr4+lap: $(LIBOFILE) corr4+lap.o
+	$(CXX) -o $@ $(CXXFLAGS) $(LIBOFILE) corr4+lap.o
+corr2+effmass: $(LIBOFILE) corr2+effmass.o
+	$(CXX) -o $@ $(CXXFLAGS) $(LIBOFILE) corr2+effmass.o
 
 clean:
-	rm -f $(LIBOFILE)
+	rm -f $(LIBOFILE) corr4+lap.o corr2+effmass.o
 

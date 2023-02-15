@@ -1,5 +1,5 @@
 /**
- * @file average.cc
+ * @file gen_average.cc
  * @author TC (reeft137@gmail.com)
  * @brief
  * @version 0.1
@@ -9,17 +9,27 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <libgen.h>
-#include <string.h>
-
-#include <complex>
-#include <valarray>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 int main(int argc, char *argv[])
 {
   // Throw away the information of the command itself
   argc--;
   argv++;
+
+  const char *gauge_type[] = {"C", "L"};
+  const char *bilinear_type[] = {"ps", "v"};
+
+  const int time_sites = 64;
+  const int space_sites = 32;
+  const int shift_interval = 8;
+  const int shift_count = time_sites / shift_interval;
+  if (time_sites % shift_interval != 0)
+  {
+    fprintf(stderr, "wrong shift_interval! \n");
+    exit(1);
+  }
 
   const char *datalist[] = {
       "RC32x64_B1900Kud01378100Ks01364000C1715-gM-001200",
@@ -222,49 +232,56 @@ int main(int argc, char *argv[])
       "RC32x64_B1900Kud01378100Ks01364000C1715-kM-001950",
   };
 
-  FILE *fp = NULL;
-  fp = fopen("caverage.sh", "w");
+  const int datalist_length = sizeof(datalist) / sizeof(datalist[0]);
+  const int gauge_length = sizeof(gauge_type) / sizeof(gauge_type[0]);
+  const int bilinear_length = sizeof(bilinear_type) / sizeof(bilinear_type[0]);
 
-  fprintf(fp, "#!/bin/bash\n\n");
-  fprintf(fp, "LQCD_BASE_DIR=/octfs/work/G14458/u6b229/bridge-1.5.3_XeonPhi/work/data\n\n");
-  fprintf(fp, "cd $1\n\n");
+  int spacetotal = space_sites * space_sites * space_sites;
 
-  for (size_t i = 0; i < 198; i++)
-  {
-    for (size_t j = 0; j < 64; j++)
+  for (size_t igauge = 0; igauge < gauge_length; igauge++)
+    for (size_t ibil = 0; ibil < bilinear_length; ibil++)
     {
-      fprintf(fp, "$LQCD_BASE_DIR/bin/pre -maxline 64 \\\n");
-      fprintf(fp, "-ofname 4pt.ps.%+03ld.gfix_C.%s \\\n", j, datalist[i]);
-      for (size_t k = 0; k < 4; k++)
+      char ofname[2048];
+      snprintf(ofname, 2048, "%s.AVE_%s", bilinear_type[ibil], gauge_type[igauge]);
+
+      FILE *fp = NULL;
+      fp = fopen(ofname, "w");
+      if (fp == NULL)
       {
-        fprintf(fp, "4pt.ps.%+03ld.sft%+03ld.gfix_C.%s \\\n", j, size_t(k * 16), datalist[i]);
+        perror(ofname);
+        exit(1);
       }
-      fprintf(fp, ";\n\n");
 
-      // fprintf(fp, "$LQCD_BASE_DIR/bin/pre -maxline 64 \\\n");
-      // fprintf(fp, "-ofname 4pt.v.%+03ld.gfix_C.%s \\\n", j, datalist[i]);
-      // for (size_t k = 0; k < 4; k++)
-      // {
-      //   fprintf(fp, "4pt.v.%+03ld.sft%+03ld.gfix_C.%s \\\n", j, k*16, datalist[i]);
-      // }
-      // fprintf(fp, ";\n\n");
+      fprintf(fp, "#!/bin/bash\n\n");
+      fprintf(fp, "LQCD_BASE_DIR=/octfs/work/G14458/u6b229/bridge-1.5.3_XeonPhi/work/data\n\n");
+      fprintf(fp, "cd $1\n\n");
+
+      for (size_t idata = 0; idata < datalist_length; idata++)
+      {
+        for (size_t itime = 0; itime < time_sites; itime++)
+        {
+          fprintf(fp, "$LQCD_BASE_DIR/pre -maxline %d \\\n", spacetotal);
+          fprintf(fp, "-ofname 4pt.%s.%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], itime, gauge_type[igauge], datalist[idata]);
+          for (size_t ishift = 0; ishift < shift_count; ishift++)
+          {
+            fprintf(fp, "4pt.%s.%+03ld.sft%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], itime, size_t(ishift * shift_interval), gauge_type[igauge], datalist[idata]);
+          }
+          fprintf(fp, ";\n\n");
+        }
+
+        for (size_t itime = 0; itime < time_sites/2; itime++)
+        {
+          fprintf(fp, "$LQCD_BASE_DIR/pre -maxline %d \\\n", spacetotal);
+          fprintf(fp, "-ofname TR.4pt.%s.%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], itime, gauge_type[igauge], datalist[idata]);
+          fprintf(fp, "4pt.%s.%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], itime, gauge_type[igauge], datalist[idata]);
+          fprintf(fp, "4pt.%s.%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], size_t(63 - itime), gauge_type[igauge], datalist[idata]);
+          fprintf(fp, ";\n\n");
+        }
+      }
+
+      if (chmod(ofname, 0000755))
+        perror(ofname);
     }
-
-    for (size_t j = 0; j < 32; j++)
-    {
-      fprintf(fp, "$LQCD_BASE_DIR/bin/pre -maxline 64 \\\n");
-      fprintf(fp, "-ofname TR.4pt.ps.%+03ld.gfix_C.%s \\\n", j, datalist[i]);
-      fprintf(fp, "4pt.ps.%+03ld.gfix_C.%s \\\n", j, datalist[i]);
-      fprintf(fp, "4pt.ps.%+03ld.gfix_C.%s \\\n", size_t(63 - j), datalist[i]);
-      fprintf(fp, ";\n\n");
-
-      // fprintf(fp, "$LQCD_BASE_DIR/bin/pre -maxline 64 \\\n");
-      // fprintf(fp, "-ofname TR.4pt.v.%+03ld.gfix_C.%s \\\n", j, datalist[i]);
-      // fprintf(fp, "4pt.v.%+03ld.gfix_C.%s \\\n", j, datalist[i]);
-      // fprintf(fp, "4pt.v.%+03ld.gfix_C.%s \\\n", size_t(63 - j), datalist[i]);
-      // fprintf(fp, ";\n\n");
-    }
-  }
 
   return 0;
 }

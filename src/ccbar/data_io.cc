@@ -90,7 +90,7 @@ void write_bin(const char *fname, int maxline, const double *data)
 {
   char pname[2048];
   gen_print_name(fname, pname);
-  fprintf(stderr, "Writing data to file '%s'... \n", pname);
+  fprintf(stderr, "Writing data to file   '%s'... \n", pname);
 
   FILE *fp = fopen(fname, "wb");
   if (fp == NULL)
@@ -107,7 +107,7 @@ void write_bin(const char *fname, int maxline, const COMPLEX *data)
 {
   char pname[2048];
   gen_print_name(fname, pname);
-  fprintf(stderr, "Writing data to file '%s'... \n", pname);
+  fprintf(stderr, "Writing data to file   '%s'... \n", pname);
 
   FILE *fp = fopen(fname, "wb");
   if (fp == NULL)
@@ -124,7 +124,7 @@ void write_bin(const char *fname, int maxline, const VARRAY_DOUBLE &data)
 {
   char pname[2048];
   gen_print_name(fname, pname);
-  fprintf(stderr, "Writing data to file '%s'... \n", pname);
+  fprintf(stderr, "Writing data to file   '%s'... \n", pname);
 
   FILE *fp = fopen(fname, "wb");
   if (fp == NULL)
@@ -141,7 +141,7 @@ void write_bin(const char *fname, int maxline, const VARRAY_COMPLEX &data)
 {
   char pname[2048];
   gen_print_name(fname, pname);
-  fprintf(stderr, "Writing data to file '%s'... \n", pname);
+  fprintf(stderr, "Writing data to file   '%s'... \n", pname);
 
   FILE *fp = fopen(fname, "wb");
   if (fp == NULL)

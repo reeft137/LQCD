@@ -30,42 +30,19 @@ int main(int argc, char *argv[])
   argc--;
   argv++;
 
-  using namespace std::complex_literals;
+  double _Complex data, denominator;
+  __real__ data = 10.0;
+  __imag__ data = 8.0;
 
-  double data[4] = {1.0, 2.0, 3.0, 4.0};
-  // data[0] = data[0] / 4.0;
+  int N = 8;
+  __real__ denominator = N;
+  __imag__ denominator = 0.0;
 
-  double *out_d = NULL;
-  double *out_c = NULL;
+  fprintf(stdout, "(%f, %fi)\n", __real__ denominator, __imag__ denominator);
 
-  out_d = &data[1];
-  // out_c = &data[1];
-  out_c = (double *)&((COMPLEX *)data)[1];
+  data = data / denominator;
 
-  fprintf(stderr, "(%f, %f), (%f, %f)\n", data[0], data[1], data[3], data[4]);
-  fprintf(stderr, "out_d: %p\nout_c: %p\n", out_d, out_c);
-  fprintf(stderr, "out_d: %f\nout_c: %f\n", *out_d, *out_c);
-  // fprintf(stderr, "data[0]: (%f, %fi)\n", data[0].real(), data[0].imag());
-  // fprintf(stderr, "data[1]: (%f, %fi)\n", data[1].real(), data[1].imag());
-
-  // int out = 0.0;
-  // for (size_t i = 0; i < 17; i++)
-  // for (size_t j = i; j < 17; j++)
-  // for (size_t k = j; k < 17; k++)
-  // {
-  //   out ++;
-  // }
-
-  // COMPLEX test_array[3];
-
-  // fprintf(stderr, "data[0]: (%f, %fi)\n", data[0].real(), data[0].imag());
-  // fprintf(stderr, "data[1]: (%f, %fi)\n", data[1].real(), data[1].imag());
-
-  // int xsite = 31;
-  // int ysite = 12;
-  // int zsite = 23;
-
-  // int spacelength = 32;
+  fprintf(stdout, "(%f, %fi)\n", __real__ data, __imag__ data);
 
   // int index = xsite + spacelength * (ysite + spacelength * zsite);
   // int x, y, z = 0;
