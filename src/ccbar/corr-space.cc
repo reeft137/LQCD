@@ -31,7 +31,7 @@ void usage(char *name)
           name);
   fprintf(stderr, "OPTIONS: \n"
                   "    -spacelength (int):  total# of space sites\n"
-                  "    -corr (ofname):      output file name of correlator"
+                  "    -corr (ofname):      output file name of correlator\n"
                   "    [-h, --help]:        see usage\n");
 }
 
@@ -66,7 +66,7 @@ void cartesian_to_spherical(const char *ifname, const char *ofname, int spacelen
 //     |________________________|
 
 int spacelength = 0;
-static const char *corr = NULL;
+static const char *corr_ofname = NULL;
 
 // __________________________________
 //     .________|______|________.
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 
     if (strcmp(argv[0], "-corr") == 0)
     {
-      corr = argv[1];
+      corr_ofname = argv[1];
       argc -= 2;
       argv += 2;
       continue;
@@ -163,12 +163,12 @@ int main(int argc, char *argv[])
   //     |________________________|
 
   char tmp_result[2047];
-  add_prefix(corr, "tmp", tmp_result);
+  add_prefix(corr_ofname, "tmp", tmp_result);
 
   normalization(a1_tmp_datalist, n2_tmp_datalist, spacelength, file_total);
   jackknife_resample(n2_tmp_datalist, js_tmp_datalist, maxline, file_total);
   jackknife_average(js_tmp_datalist, tmp_result, maxline, file_total);
-  cartesian_to_spherical(tmp_result, corr, spacelength);
+  cartesian_to_spherical(tmp_result, corr_ofname, spacelength);
 
   // __________________________________
   //     .________|______|________.
@@ -215,8 +215,8 @@ inline COMPLEX &correlator(COMPLEX *data, int x, int y, int z, int spacelength)
   x = (x + spacelength) % spacelength;
   y = (y + spacelength) % spacelength;
   z = (z + spacelength) % spacelength;
-  COMPLEX &corr = data[x + spacelength * (y + spacelength * z)];
-  return corr;
+  COMPLEX &corr_r = data[x + spacelength * (y + spacelength * z)];
+  return corr_r;
 }
 
 inline COMPLEX sphere_sym(COMPLEX *data, int x, int y, int z, int spacelength)

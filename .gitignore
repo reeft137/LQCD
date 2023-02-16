@@ -32,8 +32,9 @@
 *.app
 
 # Custom
-data
 bin
+data
+plot
 src/bridge161
 src/correlator
 tmp

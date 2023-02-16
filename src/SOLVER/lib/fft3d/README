@@ -1,0 +1,17 @@
+To use fft3d.h and fft3d.cpp:
+
+(1) Install fftw3 library to some directory (for instance)
+
+     ~/local
+
+(2) Edit Makefile.inc to add INCLUDE directory of fftw3 as
+
+    -I $(HOME)/local/include
+
+(3) Edit Makefile and/or Makefile.inc to add
+
+    -L$(HOME)/local -lfftw3
+    
+
+
+     

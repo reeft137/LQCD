@@ -1,0 +1,250 @@
+//************************************************
+// 4 point - all information
+//************************************************
+#define Prop(ptr, cF, alphaF, cI, alphaI, ixyz, it) \
+  ((Complex *)ptr)[cF + 3 * (alphaF + 4 * (cI + 3 * (alphaI + 4 * (ixyz + rcnp::XYZnodeSites * (it)))))]
+#define FourPoint(ptr, alphaF, betaF, alphaI, betaI, ixyz, it) \
+  ((Complex *)ptr)[alphaF + 4 * (betaF + 4 * (alphaI + 4 * (betaI + 4 * (ixyz + rcnp::XYZnodeSites * (it)))))]
+
+double *four_point = new double[2 * 4 * 4 * 4 * 4 * rcnp::XYZnodeSites * rcnp::TnodeSites];
+for (int it = 0; it < rcnp::TnodeSites; it++)
+{
+  for (int ixyz = 0; ixyz < rcnp::XYZnodeSites; ixyz++)
+  {
+
+    for (int betaI = 0; betaI < 4; betaI++)
+    {
+      for (int alphaI = 0; alphaI < 4; alphaI++)
+      {
+
+        for (int betaF = 0; betaF < 4; betaF++)
+        {
+          for (int alphaF = 0; alphaF < 4; alphaF++)
+          {
+
+            Complex sum = 0.0;
+            for (int cI = 0; cI < 3; cI++)
+            {
+              for (int cF = 0; cF < 3; cF++)
+              {
+                sum += Prop(prop, cF, alphaF, cI, alphaI, ixyz, it) * Prop(prop_anti, cF, betaF, cI, betaI, ixyz, it);
+              }
+            }
+            FourPoint(four_point, alphaF, betaF, alphaI, betaI, ixyz, it) = sum;
+
+          } // for(int alphaF = 0; ...)
+        }   // for(int betaF = 0; ...)
+
+      } // for(int alphaI = 0;...)
+    }   // for(betaI = 0; ...)
+
+  } // for(int ixyz = 0; ...)
+} // for(int it = 0; ...)
+
+run(four_point, 4 * 4 * 4 * 4, rcnp::TnodeSites, fft3d::Backward);
+for (int i = 0; i < 2 * 4 * 4 * 4 * 4 * rcnp::XYZTnodeSites; i++)
+{
+  four_point[i] /= double(rcnp::XYZsites * rcnp::XYZsites);
+}
+
+************************************************4 point - source multiplied with gamma matrix
+                                                              ************************************************
+                                                                  rcnp::gamma ary_gamma[] = {
+    rcnp::gamma::G5,
+    rcnp::gamma::G[1],
+    rcnp::gamma::G[2],
+    rcnp::gamma::G[3]};
+const char *corr_type[] = {
+    "ps",
+    "v1",
+    "v2",
+    "v3"};
+
+double *four_point = new double[2 * 4 * 4 * rcnp::XYZnodeSites * rcnp::TnodeSites];
+
+#define Prop(ptr, cF, alphaF, cI, alphaI, ixyz, it) \
+  ((Complex *)ptr)[cF + 3 * (alphaF + 4 * (cI + 3 * (alphaI + 4 * (ixyz + rcnp::XYZnodeSites * (it)))))]
+
+#define FourPoint(ptr, alphaF, betaF, ixyz, it) \
+  ((Complex *)ptr)[alphaF + 4 * (betaF + 4 * (ixyz + rcnp::XYZnodeSites * (it)))]
+
+for (int gamma_type = 0; gamma_type < 4; gamma_type++)
+{
+
+  rcnp::gamma conj_gammaI(dirac_conjugate(ary_gamma[gamma_type]));
+
+  for (int it = 0; it < rcnp::TnodeSites; it++)
+  {
+    for (int ixyz = 0; ixyz < rcnp::XYZnodeSites; ixyz++)
+    {
+
+      for (int alphaI = 0; alphaI < 4; alphaI++)
+      {
+
+        int betaI = conj_gammaI.b[alphaI];
+
+        for (int betaF = 0; betaF < 4; betaF++)
+        {
+          for (int alphaF = 0; alphaF < 4; alphaF++)
+          {
+
+            Complex sum = 0.0;
+
+            for (int cI = 0; cI < 3; cI++)
+            {
+              for (int cF = 0; cF < 3; cF++)
+              {
+                sum += conj_gammaI.a[alphaI] * Prop(prop, cF, alphaF, cI, alphaI, ixyz, it) * Prop(prop_anti, cF, betaF, cI, betaI, ixyz, it);
+              }
+            }
+
+            FourPoint(four_point, alphaF, betaF, ixyz, it) = sum;
+
+          } // for(int alphaF = 0; ...)
+        }   // for(int betaF = 0; ...)
+
+      } // for(int alphaI = 0;...)
+
+    } // for(int ixyz = 0; ...)
+  }   // for(int it = 0; ...)
+
+  run(four_point, 4 * 4, rcnp::TnodeSites, fft3d::Backward);
+  for (int i = 0; i < 2 * 4 * 4 * rcnp::XYZTnodeSites; i++)
+  {
+    four_point[i] /= double(rcnp::XYZsites * rcnp::XYZsites);
+  }
+
+  // output by using MPIIO
+  for (int it = 0; it < rcnp::TnodeSites; it++)
+  {
+    int iT = it + rcnp::TnodeSites * rcnp::TnodeCoor;
+    char ofname[2048];
+    char tmp[2048];
+    strncpy(tmp, ifname, 2048);
+    sprintf(ofname, "%s.%s.%+03d.%+03d.%s", ofbase_4pt, corr_type[gamma_type], iT, ishift, basename(tmp));
+
+    MPI_File fh;
+    MPI_File_open(rcnp::comm_XYZ,
+                  ofname,
+                  MPI_MODE_WRONLY | MPI_MODE_CREATE,
+                  MPI_INFO_NULL,
+                  &fh);
+    rcnp::mpiwrite_XYZ(2 * 4 * 4, 1, (double *)&FourPoint(four_point, 0, 0, 0, it), fh, 0);
+    MPI_File_sync(fh);
+    MPI_File_close(&fh);
+  }
+} // for(int i = 0;...)
+
+#undef FourPoint
+#undef Prop
+delete[] four_point;
+delete[] prop_anti;
+}
+delete[] prop;
+
+if (ofbase_prop)
+{
+  char ofname[2048];
+  char tmp[2048];
+  strncpy(tmp, ifname, 2048);
+  sprintf(ofname, "%s.%s", ofbase_prop, basename(tmp));
+
+  Bridge::vout.general("generating %s\n", ofname);
+  MPI_File fh;
+  MPI_File_open(MPI_COMM_WORLD,
+                ofname,
+                MPI_MODE_WRONLY | MPI_MODE_CREATE,
+                MPI_INFO_NULL,
+                &fh);
+  rcnp::mpiwrite_XYZT(2 * 3 * 4 * 3 * 4, 1, prop, fh, 0);
+  MPI_File_close(&fh);
+}
+
+if (rcnp::XYZTnodeCoor == 0)
+{
+  FILE *fp = stdout;
+  if (ofbase_2pt)
+  {
+    char ofname[2048];
+    char tmp[2048];
+    strncpy(tmp, ifname, 2048);
+    sprintf(ofname, "%s.%s.%s", ofbase_2pt, corr_type[i], basename(tmp));
+    fprintf(stderr, "generating %s\n", ofname);
+
+    if ((fp = fopen(ofname, "w")) == NULL)
+    {
+      fprintf(stderr, "ERROR: cannot fopen '%s' for writing\n", ofname);
+      exit(1);
+    }
+  }
+
+  for (int iT = 0; iT < rcnp::Tsites; iT++)
+  {
+    fprintf(fp, "%d  %1.16e  %1.16e\n", iT, __real__ corr[iT], __imag__ corr[iT]);
+  }
+  if (ofbase_2pt)
+  {
+    fclose(fp);
+  }
+}
+
+#define Prop(ptr, cF, alphaF, cI, alphaI, ixyz, it) \
+  ((Complex *)ptr)[cF + 3 * (alphaF + 4 * (cI + 3 * (alphaI + 4 * (ixyz + rcnp::XYZnodeSites * (it)))))]
+
+#define FourPoint(ptr, ixyz, it) \
+  ((Complex *)ptr)[ixyz + rcnp::XYZnodeSites * (it)]
+
+for (int gamma_type = 0; gamma_type < 4; gamma_type++)
+{
+
+  rcnp::gamma conj_gammaI(dirac_conjugate(ary_gamma[gamma_type]));
+
+  for (int it = 0; it < rcnp::TnodeSites; it++)
+  {
+    for (int ixyz = 0; ixyz < rcnp::XYZnodeSites; ixyz++)
+    {
+
+      Complex sum = 0.0;
+
+      for (int alphaI = 0; alphaI < 4; alphaI++)
+      {
+        for (int betaF = 0; betaF < 4; betaF++)
+        {
+
+          int alphaF = ary_gamma[gamma_type].b[betaF];
+          int betaI = conj_gammaI.b[alphaI];
+
+          for (int cI = 0; cI < 3; cI++)
+          {
+            for (int cF = 0; cF < 3; cF++)
+            {
+              sum += ary_gamma[gamma_type].a[betaF] * conj_gammaI.a[alphaI] * Prop(prop, cF, alphaF, cI, alphaI, ixyz, it) * Prop(prop_anti, cF, betaF, cI, betaI, ixyz, it);
+            }
+          }
+        } // for(int betaF = 0; ...)
+      }   // for(int alphaI = 0;...)
+
+      FourPoint(four_point, ixyz, it) = sum;
+
+    } // for(int ixyz = 0; ...)
+  }   // for(int it = 0; ...)
+
+  // output by using MPIIO
+  for (int it = 0; it < rcnp::TnodeSites; it++)
+  {
+    int iT = it + rcnp::TnodeSites * rcnp::TnodeCoor;
+    char ofname[2048];
+    char tmp[2048];
+    strncpy(tmp, ifname, 2048);
+    sprintf(ofname, "%s.%s.%+03d.%+03d.%s", ofbase_4pt, "s", iT, T_shift, basename(tmp));
+
+    MPI_File fh;
+    MPI_File_open(rcnp::comm_XYZ,
+                  ofname,
+                  MPI_MODE_WRONLY | MPI_MODE_CREATE,
+                  MPI_INFO_NULL,
+                  &fh);
+    rcnp::mpiwrite_XYZ(2, 1, (double *)&FourPoint(s4, 0, it), fh, 0);
+    MPI_File_sync(fh);
+    MPI_File_close(&fh);
+  }

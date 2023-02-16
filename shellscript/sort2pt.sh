@@ -1,6 +1,4 @@
 #!/bin/bash
-DIR=$1
-
 cd $1
 
 mkdir s v t av ps

@@ -12,37 +12,20 @@ typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
 typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
 
-// COMPLEX CORR(const COMPLEX *data, int xsite, int ysite, int zsite, int spacelength)
-// {
-//   int x = (xsite + spacelength) % spacelength;
-//   int y = (ysite + spacelength) % spacelength;
-//   int z = (zsite + spacelength) % spacelength;
-//   return data[x + spacelength * (y + spacelength * z)];
-// }
-
-// inline COMPLEX &TEST(COMPLEX *data, int index)
-// {
-//   return data[index];
-// }
-
 int main(int argc, char *argv[])
 {
   argc--;
   argv++;
 
-  double _Complex data, denominator;
-  __real__ data = 10.0;
-  __imag__ data = 8.0;
+  FILE* fp = NULL;
+  fp = fopen("./test.txt", "w");
+  if(fp == NULL)
+  {
+    perror("./test.txt");
+    exit(1);
+  }
 
-  int N = 8;
-  __real__ denominator = N;
-  __imag__ denominator = 0.0;
-
-  fprintf(stdout, "(%f, %fi)\n", __real__ denominator, __imag__ denominator);
-
-  data = data / denominator;
-
-  fprintf(stdout, "(%f, %fi)\n", __real__ data, __imag__ data);
+  fprintf(fp, "hello, world!");
 
   // int index = xsite + spacelength * (ysite + spacelength * zsite);
   // int x, y, z = 0;
