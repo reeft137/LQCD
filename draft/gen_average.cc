@@ -238,8 +238,8 @@ int main(int argc, char *argv[])
 
   int spacetotal = space_sites * space_sites * space_sites;
 
-  for (size_t igauge = 0; igauge < gauge_length; igauge++)
-    for (size_t ibil = 0; ibil < bilinear_length; ibil++)
+  for (int igauge = 0; igauge < gauge_length; igauge++)
+    for (int ibil = 0; ibil < bilinear_length; ibil++)
     {
       char ofname[2048];
       snprintf(ofname, 2048, "%s.AVE_%s", bilinear_type[ibil], gauge_type[igauge]);
@@ -256,25 +256,25 @@ int main(int argc, char *argv[])
       fprintf(fp, "LQCD_BASE_DIR=/octfs/work/G14458/u6b229/bridge-1.5.3_XeonPhi/work/data\n\n");
       fprintf(fp, "cd $1\n\n");
 
-      for (size_t idata = 0; idata < datalist_length; idata++)
+      for (int idata = 0; idata < datalist_length; idata++)
       {
-        for (size_t itime = 0; itime < time_sites; itime++)
+        for (int itime = 0; itime < time_sites; itime++)
         {
           fprintf(fp, "$LQCD_BASE_DIR/pre -maxline %d \\\n", spacetotal);
           fprintf(fp, "-ofname 4pt.%s.%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], itime, gauge_type[igauge], datalist[idata]);
-          for (size_t ishift = 0; ishift < shift_count; ishift++)
+          for (int ishift = 0; ishift < shift_count; ishift++)
           {
-            fprintf(fp, "4pt.%s.%+03ld.sft%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], itime, size_t(ishift * shift_interval), gauge_type[igauge], datalist[idata]);
+            fprintf(fp, "4pt.%s.%+03ld.sft%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], itime, int(ishift * shift_interval), gauge_type[igauge], datalist[idata]);
           }
           fprintf(fp, ";\n\n");
         }
 
-        for (size_t itime = 0; itime < time_sites/2; itime++)
+        for (int itime = 0; itime < time_sites/2; itime++)
         {
           fprintf(fp, "$LQCD_BASE_DIR/pre -maxline %d \\\n", spacetotal);
           fprintf(fp, "-ofname TR.4pt.%s.%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], itime, gauge_type[igauge], datalist[idata]);
           fprintf(fp, "4pt.%s.%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], itime, gauge_type[igauge], datalist[idata]);
-          fprintf(fp, "4pt.%s.%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], size_t(63 - itime), gauge_type[igauge], datalist[idata]);
+          fprintf(fp, "4pt.%s.%+03ld.gfix_%s.%s \\\n", bilinear_type[ibil], int(63 - itime), gauge_type[igauge], datalist[idata]);
           fprintf(fp, ";\n\n");
         }
       }

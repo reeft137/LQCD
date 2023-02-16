@@ -73,11 +73,11 @@ namespace rcnp {
 			       MPI_Comm &comm_T);
 
   // I/O
-  extern void mpiread_XYZT( int nin, int nex, double *ptr, MPI_File fh, size_t offset=0);
-  extern void mpiwrite_XYZT(int nin, int nex, double *ptr, MPI_File fh, size_t offset=0);
+  extern void mpiread_XYZT( int nin, int nex, double *ptr, MPI_File fh, int offset=0);
+  extern void mpiwrite_XYZT(int nin, int nex, double *ptr, MPI_File fh, int offset=0);
 
-  extern void mpiread_XYZ(  int nin, int nex, double *ptr, MPI_File fh, size_t offset=0);
-  extern void mpiwrite_XYZ( int nin, int nex, double *ptr, MPI_File fh, size_t offset=0);
+  extern void mpiread_XYZ(  int nin, int nex, double *ptr, MPI_File fh, int offset=0);
+  extern void mpiwrite_XYZ( int nin, int nex, double *ptr, MPI_File fh, int offset=0);
 
   // shift
   extern void shift(double *ptr, int dir, int ishift, int nin, int nex);

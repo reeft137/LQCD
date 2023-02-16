@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 
   // Main part
   double complex out[maxline], v[maxline], ps[maxline];
-  for (size_t i = 0; i < maxline; i++)
+  for (int i = 0; i < maxline; i++)
   {
     out[i] = v[i] = ps[i] = 0.0;
   }
@@ -98,9 +98,9 @@ int main(int argc, char *argv[])
   read_bin(argv[0], maxline, v);
   read_bin(argv[1], maxline, ps);
 
-  for (size_t i = 0; i < maxline; i++)
+  for (int i = 0; i < maxline; i++)
   {
-    out[i] += (3.0 * v[i] + ps[i]) / 4.0;
+    out[i] = (3.0 * v[i] + ps[i]) / 4.0;
   }
 
   write_bin(ofname, maxline, out);
@@ -111,14 +111,14 @@ int main(int argc, char *argv[])
 // Function definition
 void gen_print_name(const char *ifname, char *ofname)
 {
-  char stmp[2048], dir[2048], base[2048];
+  char stmp[1024], dir[1024], base[1024];
   // dirname() and basename() will change the original string,
   // so we need to copy from ifname twice.
-  strncpy(stmp, ifname, 2047);
-  strncpy(dir, dirname(stmp), 2047);
-  strncpy(stmp, ifname, 2047);
-  strncpy(base, basename(stmp), 2047);
-  snprintf(ofname, 2047, "%s/%s", dir, base);
+  strncpy(stmp, ifname, 1023);
+  strncpy(dir, dirname(stmp), 1023);
+  strncpy(stmp, ifname, 1023);
+  strncpy(base, basename(stmp), 1023);
+  snprintf(ofname, 2048, "%s/%s", dir, base);
 }
 
 void read_bin(const char *fname, int maxline, double complex *data)

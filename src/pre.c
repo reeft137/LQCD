@@ -70,22 +70,22 @@ int main(int argc, char *argv[])
   double complex Nc = argc;
 
   double complex out[maxline];
-  for (size_t i = 0; i < maxline; i++)
+  for (int i = 0; i < maxline; i++)
   {
     out[i] = 0.0;
   }
 
-  for (size_t i = 0; i < N; i++)
+  for (int i = 0; i < N; i++)
   {
     double complex tmp[maxline];
-    for (size_t j = 0; j < maxline; j++)
+    for (int j = 0; j < maxline; j++)
     {
       tmp[j] = 0.0;
     }
 
     read_bin(argv[i], maxline, tmp);
 
-    for (size_t j = 0; j < maxline; j++)
+    for (int j = 0; j < maxline; j++)
     {
       out[j] += tmp[j] / Nc;
     }

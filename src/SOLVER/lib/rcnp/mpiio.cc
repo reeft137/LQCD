@@ -24,7 +24,7 @@ namespace rcnp {
    * offset = 0
    */
   //---------------------------------------------------------------------
-  void mpiread_XYZT(int nin, int nex, double *ptr, MPI_File fh, size_t offset)
+  void mpiread_XYZT(int nin, int nex, double *ptr, MPI_File fh, int offset)
   {
     MPI_Status stat;
     for(      int iex = 0; iex < nex;        iex++){
@@ -59,7 +59,7 @@ namespace rcnp {
    *
    */
   //---------------------------------------------------------------------
-  void mpiwrite_XYZT(int nin, int nex, double *ptr, MPI_File fh, size_t offset)
+  void mpiwrite_XYZT(int nin, int nex, double *ptr, MPI_File fh, int offset)
   {
     MPI_Status stat;
     for(      int iex = 0; iex < nex;        iex++){
@@ -95,7 +95,7 @@ namespace rcnp {
    *
    */
   //---------------------------------------------------------------------
-  void mpiread_XYZ(int nin, int nex, double *ptr, MPI_File fh, size_t offset)
+  void mpiread_XYZ(int nin, int nex, double *ptr, MPI_File fh, int offset)
   {
     MPI_Status stat;
     for(int     iex = 0; iex < nex;        iex++){
@@ -127,7 +127,7 @@ namespace rcnp {
    *
    */
   //---------------------------------------------------------------------
-  void mpiwrite_XYZ(int nin, int nex, double *ptr, MPI_File fh, size_t offset)
+  void mpiwrite_XYZ(int nin, int nex, double *ptr, MPI_File fh, int offset)
   {
     MPI_Status stat;
     for(    int iex = 0; iex < nex;        iex++){

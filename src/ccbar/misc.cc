@@ -17,24 +17,24 @@
 
 void gen_print_name(const char *ifname, char *ofname)
 {
-  char stmp[2048], dir[2048], base[2048];
+  char stmp[1024], dir[1024], base[1024];
   // dirname() and basename() will change the original string, 
   // so we need to copy from ifname twice.
-  strncpy(stmp, ifname, 2047);
-  strncpy(dir, dirname(stmp), 2047);
-  strncpy(stmp, ifname, 2047);
-  strncpy(base, basename(stmp), 2047);
-  snprintf(ofname, 2047, "%s/%s", dir, base);
+  strncpy(stmp, ifname, 1023);
+  strncpy(dir, dirname(stmp), 1023);
+  strncpy(stmp, ifname, 1023);
+  strncpy(base, basename(stmp), 1023);
+  snprintf(ofname, 2048, "%s/%s", dir, base);
 }
 
 void add_prefix(const char *ifname, const char *prefix, char *ofname)
 {
-  char stmp[2048], dir[2048], base[2048];
-  strncpy(stmp, ifname, 2047);
-  strncpy(dir, dirname(stmp), 2047);
-  strncpy(stmp, ifname, 2047);
-  strncpy(base, basename(stmp), 2047);
-  snprintf(ofname, 2047, "%s/%s.%s", dir, prefix, base);
+  char stmp[1024], dir[1024], base[1024];
+  strncpy(stmp, ifname, 1023);
+  strncpy(dir, dirname(stmp), 1023);
+  strncpy(stmp, ifname, 1023);
+  strncpy(base, basename(stmp), 1023);
+  snprintf(ofname, 4096, "%s/%s.%s", dir, prefix, base);
 }
 
 inline void mkchdir(const char *destination)

@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
   // FILE *fp = NULL;
   // fp = fopen("out.txt", "wb");
   // int data[10];
-  // for (size_t i = 0; i < 10; i++)
+  // for (int i = 0; i < 10; i++)
   // {
   //   data[i] = i;
   // }
@@ -53,14 +53,14 @@ int main(int argc, char *argv[])
   // FILE *ofp = NULL;
   // ofp = fopen("wtest.txt", "rb");
   // int datadata[20];
-  // for (size_t i = 0; i < 10; i++)
+  // for (int i = 0; i < 10; i++)
   // {
   //   datadata[i] = 0;
   // }
 
   // int D = fread(datadata, sizeof(int), 20, ofp);
   // fclose(ofp);
-  // for (size_t i = 0; i < 20; i++)
+  // for (int i = 0; i < 20; i++)
   // {
   //   printf("%d\n", datadata[i]);
   // }

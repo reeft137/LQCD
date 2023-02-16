@@ -13,9 +13,9 @@
 #include <stddef.h>
 
 namespace rcnp {
-  extern void change_endian(double *ptr, size_t len);
+  extern void change_endian(double *ptr, int len);
   extern void reshape_123_to_132(double *dst, const double *src,
-				 size_t size1, size_t size2, size_t size3);
+				 int size1, int size2, int size3);
 }
 
 

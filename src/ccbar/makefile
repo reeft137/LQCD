@@ -15,5 +15,8 @@ v_s: v_s.o
 
 clean:
 	$(RM) $(OBJS) corr-time.o corr-space.o v_0.o v_s.o
+
+allclean:
+	$(RM) $(OBJS) corr-time.o corr-space.o v_0.o v_s.o
 	$(RM) corr-time corr-space v_0 v_s
 

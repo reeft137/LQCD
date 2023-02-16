@@ -76,8 +76,8 @@ static const char *corr_ofname = NULL;
 
 int main(int argc, char *argv[])
 {
-  char program_name[2048];
-  strncpy(program_name, basename(argv[0]), 2047);
+  char program_name[1024];
+  strncpy(program_name, basename(argv[0]), 1023);
   argc--;
   argv++;
   // __________________________________
@@ -136,15 +136,15 @@ int main(int argc, char *argv[])
   // Main Body
   // Create some string arrays for temparory file names (A1+ data, jackknife resampled data...)
   char *a1_tmp_datalist[file_total], *n2_tmp_datalist[file_total], *js_tmp_datalist[file_total], *lap_tmp_datalist[file_total];
-  for (size_t i = 0; i < file_total; i++)
+  for (int i = 0; i < file_total; i++)
   {
-    a1_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
+    a1_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char)); // malloc: allocate memory for a pointer
     add_prefix(argv[i], "A1+", a1_tmp_datalist[i]);
-    n2_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char));
+    n2_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
     add_prefix(argv[i], "n2", n2_tmp_datalist[i]);
-    js_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char));
+    js_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
     add_prefix(argv[i], "js", js_tmp_datalist[i]);
-    lap_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char));
+    lap_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
     add_prefix(argv[i], "lap", lap_tmp_datalist[i]);
   }
 
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
   //     |     4pt Correlator     |
   //     |________________________|
 
-  char tmp_result[2047];
+  char tmp_result[4096];
   add_prefix(corr_ofname, "tmp", tmp_result);
 
   normalization(a1_tmp_datalist, n2_tmp_datalist, spacelength, file_total);
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
   laplacian(a1_tmp_datalist, lap_tmp_datalist, spacelength, file_total);
 
   // Remove temporary files
-  for (size_t i = 0; i < file_total; i++)
+  for (int i = 0; i < file_total; i++)
   {
     if (remove(a1_tmp_datalist[i]))
       perror(a1_tmp_datalist[i]);
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
   fprintf(stderr, "Finished! \n\n");
 
   // Finalization for the string arrays
-  for (size_t i = 0; i < file_total; i++)
+  for (int i = 0; i < file_total; i++)
   {
     free(a1_tmp_datalist[i]);
     free(n2_tmp_datalist[i]);
@@ -233,19 +233,19 @@ void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int file_tot
 {
   int maxline = int(pow(spacelength, 3));
 
-  for (size_t i = 0; i < file_total; i++)
+  for (int i = 0; i < file_total; i++)
   {
     COMPLEX tmp[maxline], result[maxline];
-    for (size_t j = 0; j < maxline; j++) // Initialize the empty arrays
+    for (int j = 0; j < maxline; j++) // Initialize the empty arrays
     {
       tmp[j] = result[j] = 0.0;
     }
 
     read_bin(datalist[i], maxline, tmp);
 
-    for (size_t ix = 0; ix < spacelength; ix++)
-      for (size_t iy = 0; iy < spacelength; iy++)
-        for (size_t iz = 0; iz < spacelength; iz++)
+    for (int ix = 0; ix < spacelength; ix++)
+      for (int iy = 0; iy < spacelength; iy++)
+        for (int iz = 0; iz < spacelength; iz++)
         {
           correlator(result, ix, iy, iz, spacelength) = a1_sym(tmp, ix, iy, iz, spacelength);
         }
@@ -258,10 +258,10 @@ void normalization(char *datalist[], char *r_datalist[], int spacelength, int fi
 {
   int maxline = int(pow(spacelength, 3));
 
-  for (size_t i = 0; i < file_total; i++)
+  for (int i = 0; i < file_total; i++)
   {
     COMPLEX tmp[maxline], result[maxline];
-    for (size_t j = 0; j < maxline; j++) // Initialize the empty arrays
+    for (int j = 0; j < maxline; j++) // Initialize the empty arrays
     {
       tmp[j] = result[j] = 0.0;
     }
@@ -269,12 +269,12 @@ void normalization(char *datalist[], char *r_datalist[], int spacelength, int fi
     read_bin(datalist[i], maxline, tmp);
 
     double norm = 0.0;
-    for (size_t j = 0; j < maxline; j++)
+    for (int j = 0; j < maxline; j++)
     {
       norm += sqrt((tmp[j] * std::conj(tmp[j])).real());
     }
 
-    for (size_t j = 0; j < maxline; j++)
+    for (int j = 0; j < maxline; j++)
     {
       result[j] = tmp[j] / norm;
     }
@@ -287,10 +287,10 @@ void laplacian(char *datalist[], char *r_datalist[], int spacelength, int file_t
 {
   int maxline = int(pow(spacelength, 3));
 
-  for (size_t i = 0; i < file_total; i++)
+  for (int i = 0; i < file_total; i++)
   {
     COMPLEX tmp[maxline], result[maxline];
-    for (size_t j = 0; j < maxline; j++) // Initialize the empty arrays
+    for (int j = 0; j < maxline; j++) // Initialize the empty arrays
     {
       tmp[j] = result[j] = 0.0;
     }
@@ -313,7 +313,7 @@ void cartesian_to_spherical(const char *ifname, const char *ofname, int spacelen
   int maxline = pow(spacelength, 3);
 
   COMPLEX tmp[maxline];
-  for (size_t j = 0; j < maxline; j++) // Initialize the empty arrays
+  for (int j = 0; j < maxline; j++) // Initialize the empty arrays
   {
     tmp[j] = 0.0;
   }
@@ -330,9 +330,9 @@ void cartesian_to_spherical(const char *ifname, const char *ofname, int spacelen
     exit(1);
   }
 
-  for (size_t i = 0; i < spacelength / 2 + 1; i++)
-    for (size_t j = i; j < spacelength / 2 + 1; j++)
-      for (size_t k = j; k < spacelength / 2 + 1; k++)
+  for (int i = 0; i < spacelength / 2 + 1; i++)
+    for (int j = i; j < spacelength / 2 + 1; j++)
+      for (int k = j; k < spacelength / 2 + 1; k++)
       {
         double value, variance, distance = 0.0;
 

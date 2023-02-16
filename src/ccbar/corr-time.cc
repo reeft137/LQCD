@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
   {
     // Create some string arrays for temparory file names (time reversed data, jackknife resampled data...)
     char *tr_tmp_datalist[file_total], *js_tmp_datalist[file_total];
-    for (size_t i = 0; i < file_total; i++)
+    for (int i = 0; i < file_total; i++)
     {
       tr_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
       strncpy(tr_tmp_datalist[i], argv[i], 2047);
@@ -149,16 +149,16 @@ int main(int argc, char *argv[])
     // Calculate the effective mass (exp and cosh types)
     if (effmass)
     {
-      char expmass[2048], coshmass[2048];
+      char expmass[4096], coshmass[4096];
       add_prefix(effmass, "exp", expmass);
       add_prefix(effmass, "cosh", coshmass);
 
       char *em_tmp_datalist[file_total], *hm_tmp_datalist[file_total];
-      for (size_t i = 0; i < file_total; i++)
+      for (int i = 0; i < file_total; i++)
       {
-        em_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
+        em_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char)); // malloc: allocate memory for a pointer
         strncpy(em_tmp_datalist[i], argv[i], 2047);
-        hm_tmp_datalist[i] = (char *)malloc(2048 * sizeof(char)); // malloc: allocate memory for a pointer
+        hm_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char)); // malloc: allocate memory for a pointer
         strncpy(hm_tmp_datalist[i], argv[i], 2047);
       }
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
       jackknife_average(hm_tmp_datalist, timelength, file_total, coshmass);
 
       // Remove temporary files
-      for (size_t i = 0; i < file_total; i++)
+      for (int i = 0; i < file_total; i++)
       {
         if (remove(em_tmp_datalist[i]))
           perror(em_tmp_datalist[i]);
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
       }
 
       // Finalization for the string arrays
-      for (size_t i = 0; i < file_total; i++)
+      for (int i = 0; i < file_total; i++)
       {
         free(em_tmp_datalist[i]);
         free(hm_tmp_datalist[i]);
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
     }
 
     // Remove temporary files
-    for (size_t i = 0; i < file_total; i++)
+    for (int i = 0; i < file_total; i++)
     {
       if (remove(tr_tmp_datalist[i]))
         perror(tr_tmp_datalist[i]);
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
     }
 
     // Finalization for the string arrays
-    for (size_t i = 0; i < file_total; i++)
+    for (int i = 0; i < file_total; i++)
     {
       free(tr_tmp_datalist[i]);
       free(js_tmp_datalist[i]);
@@ -223,7 +223,7 @@ void time_reverse_2pt(char *datalist[], int timelength, int file_total, char *r_
     data = 0.0;
     read_bin(datalist[i], timelength, data);
 
-    for (size_t i = 0; i < timelength / 2 + 1; i++)
+    for (int i = 0; i < timelength / 2 + 1; i++)
     {
       data[i] = (data[i] + data[(timelength - i) % timelength]) * 0.5;
     }
@@ -251,7 +251,7 @@ void write_txt(const char *fname, int timelength, const COMPLEX *data)
     exit(1);
   }
 
-  for (size_t i = 0; i < timelength; i++)
+  for (int i = 0; i < timelength; i++)
   {
     fprintf(fp, "%d %1.16e %1.16e\n", i, data[i].real(), data[i].imag());
   }
@@ -271,7 +271,7 @@ void write_txt(const char *fname, int timelength, const VARRAY_COMPLEX &data)
     exit(1);
   }
 
-  for (size_t i = 0; i < timelength; i++)
+  for (int i = 0; i < timelength; i++)
   {
     fprintf(fp, "%d %1.16e %1.16e\n", i, data[i].real(), data[i].imag());
   }

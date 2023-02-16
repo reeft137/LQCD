@@ -21,7 +21,7 @@ typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
 // Keep the real part of the data
 void keep_real(VARRAY_COMPLEX &data, VARRAY_DOUBLE &rdata, int maxline)
 {
-  for (size_t i = 0; i < maxline; i++)
+  for (int i = 0; i < maxline; i++)
   {
     rdata[i] = data[i].real();
   }
