@@ -32,6 +32,7 @@ void usage(char *name)
   fprintf(stderr, "OPTIONS: \n"
                   "    -spacelength (int):  total# of space sites\n"
                   "    -corr (ofname):      output file name of correlator\n"
+                  "    -pot (ofname):       output file name of potential\n"
                   "    [-h, --help]:        see usage\n");
 }
 
@@ -67,6 +68,7 @@ void cartesian_to_spherical(const char *ifname, const char *ofname, int spacelen
 
 int spacelength = 0;
 static const char *corr_ofname = NULL;
+static const char *pot_ofname = NULL;
 
 // __________________________________
 //     .________|______|________.
@@ -116,6 +118,14 @@ int main(int argc, char *argv[])
       continue;
     }
 
+    if (strcmp(argv[0], "-pot") == 0)
+    {
+      pot_ofname = argv[1];
+      argc -= 2;
+      argv += 2;
+      continue;
+    }
+
     fprintf(stderr, "Error: Unknown option '%s'\n", argv[0]);
     exit(1);
   }
@@ -133,72 +143,127 @@ int main(int argc, char *argv[])
   fprintf(stderr, "# Total of data files: %d\n", file_total);
   fprintf(stderr, "##################################################\n\n");
 
-  // Main Body
-  // Create some string arrays for temparory file names (A1+ data, jackknife resampled data...)
-  char *a1_tmp_datalist[file_total], *n2_tmp_datalist[file_total], *js_tmp_datalist[file_total], *lap_tmp_datalist[file_total];
-  for (int i = 0; i < file_total; i++)
-  {
-    a1_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char)); // malloc: allocate memory for a pointer
-    add_prefix(argv[i], "A1+", a1_tmp_datalist[i]);
-    n2_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
-    add_prefix(argv[i], "n2", n2_tmp_datalist[i]);
-    js_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
-    add_prefix(argv[i], "js", js_tmp_datalist[i]);
-    lap_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
-    add_prefix(argv[i], "lap", lap_tmp_datalist[i]);
-  }
-
-  // __________________________________
-  //     .________|______|________.
-  //     |                        |
-  //     |     A1+ projection     |
-  //     |________________________|
-
-  a1_plus(argv, a1_tmp_datalist, spacelength, file_total);
-
+  //             Main Body
   // __________________________________
   //     .________|______|________.
   //     |                        |
   //     |     4pt Correlator     |
   //     |________________________|
 
-  char tmp_result[4096];
-  add_prefix(corr_ofname, "tmp", tmp_result);
+  if (corr_ofname)
+  {
+    // Create some string arrays for temparory file names (A1+, N2, jackknife, laplacian)
+    char *a1_tmp_datalist[file_total], *n2_tmp_datalist[file_total], *js_tmp_datalist[file_total], *lap_tmp_datalist[file_total];
+    for (int i = 0; i < file_total; i++)
+    {
+      a1_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char)); // malloc: allocate memory for a pointer
+      add_prefix(argv[i], "A1+", a1_tmp_datalist[i]);
+      n2_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
+      add_prefix(argv[i], "n2", n2_tmp_datalist[i]);
+      js_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
+      add_prefix(argv[i], "js", js_tmp_datalist[i]);
+      lap_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
+      add_prefix(argv[i], "lap", lap_tmp_datalist[i]);
+    }
 
-  normalization(a1_tmp_datalist, n2_tmp_datalist, spacelength, file_total);
-  jackknife_resample(n2_tmp_datalist, js_tmp_datalist, maxline, file_total);
-  jackknife_average(js_tmp_datalist, tmp_result, maxline, file_total);
-  cartesian_to_spherical(tmp_result, corr_ofname, spacelength);
+    // __________________________________
+    //     .________|______|________.
+    //     |                        |
+    //     |     A1+ projection     |
+    //     |________________________|
+
+    a1_plus(argv, a1_tmp_datalist, spacelength, file_total);
+
+    // __________________________________
+    //     .________|______|________.
+    //     |                        |
+    //     |    N2 and Jackknife    |
+    //     |________________________|
+
+    char tmp_result[4096];
+    add_prefix(corr_ofname, "tmp", tmp_result);
+
+    normalization(a1_tmp_datalist, n2_tmp_datalist, spacelength, file_total);
+    jackknife_resample(n2_tmp_datalist, js_tmp_datalist, maxline, file_total);
+    jackknife_average(js_tmp_datalist, tmp_result, maxline, file_total);
+    cartesian_to_spherical(tmp_result, corr_ofname, spacelength);
+
+    // __________________________________
+    //     .________|______|________.
+    //     |                        |
+    //     |   Discrete Laplacian   |
+    //     |________________________|
+
+    laplacian(a1_tmp_datalist, lap_tmp_datalist, spacelength, file_total);
+
+    // Remove temporary files
+    for (int i = 0; i < file_total; i++)
+    {
+      if (remove(a1_tmp_datalist[i]))
+        perror(a1_tmp_datalist[i]);
+      if (remove(n2_tmp_datalist[i]))
+        perror(n2_tmp_datalist[i]);
+      if (remove(js_tmp_datalist[i]))
+        perror(js_tmp_datalist[i]);
+    }
+    if (remove(tmp_result))
+      perror(tmp_result);
+    fprintf(stderr, "Finished! \n\n");
+
+    // Finalization for the string arrays
+    for (int i = 0; i < file_total; i++)
+    {
+      free(a1_tmp_datalist[i]);
+      free(n2_tmp_datalist[i]);
+      free(js_tmp_datalist[i]);
+      free(lap_tmp_datalist[i]);
+    }
+  }
 
   // __________________________________
   //     .________|______|________.
   //     |                        |
-  //     |   Discrete Laplacian   |
+  //     |     Calc Potential     |
   //     |________________________|
 
-  laplacian(a1_tmp_datalist, lap_tmp_datalist, spacelength, file_total);
-
-  // Remove temporary files
-  for (int i = 0; i < file_total; i++)
+  if (pot_ofname)
   {
-    if (remove(a1_tmp_datalist[i]))
-      perror(a1_tmp_datalist[i]);
-    if (remove(n2_tmp_datalist[i]))
-      perror(n2_tmp_datalist[i]);
-    if (remove(js_tmp_datalist[i]))
-      perror(js_tmp_datalist[i]);
-  }
-  if (remove(tmp_result))
-    perror(tmp_result);
-  fprintf(stderr, "Finished! \n\n");
+    // Create some string arrays for temparory file names (jackknife)
+    char *js_tmp_datalist[file_total];
+    for (int i = 0; i < file_total; i++)
+    {
+      js_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
+      add_prefix(argv[i], "js", js_tmp_datalist[i]);
+    }
 
-  // Finalization for the string arrays
-  for (int i = 0; i < file_total; i++)
-  {
-    free(a1_tmp_datalist[i]);
-    free(n2_tmp_datalist[i]);
-    free(js_tmp_datalist[i]);
-    free(lap_tmp_datalist[i]);
+    // __________________________________
+    //     .________|______|________.
+    //     |                        |
+    //     |        Jackknife       |
+    //     |________________________|
+
+    char tmp_result[4096];
+    add_prefix(pot_ofname, "tmp", tmp_result);
+
+    jackknife_resample(argv, js_tmp_datalist, maxline, file_total);
+    jackknife_average(js_tmp_datalist, tmp_result, maxline, file_total);
+    cartesian_to_spherical(tmp_result, pot_ofname, spacelength);
+
+    // Remove temporary files
+    for (int i = 0; i < file_total; i++)
+    {
+      if (remove(js_tmp_datalist[i]))
+        perror(js_tmp_datalist[i]);
+    }
+    if (remove(tmp_result))
+      perror(tmp_result);
+    fprintf(stderr, "Finished! \n\n");
+
+    // Finalization for the string arrays
+    for (int i = 0; i < file_total; i++)
+    {
+      free(js_tmp_datalist[i]);
+    }
   }
 
   return 0;
