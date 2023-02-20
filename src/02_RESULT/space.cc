@@ -1,27 +1,17 @@
 /**
- * @file space_corr.cc
+ * @file space.cc
  * @author TC (reeft137@gmail.com)
- * @brief Main program to calculate the correlator and laplacian of it
+ * @brief Main program to calculate the spacial correlator and "pre-potential".
+ *        Also, this program can change the result from Cartesian coordinate to spherical cooridinate.
  * @version 0.1
  * @date 2023-02-02
  *
  */
 
-#include <stdio.h> // C libraries
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <libgen.h>
-#include <complex> // C++ libraries
-#include <valarray>
-#include "data_io.h" // Custom libraries
-#include "jackknife.h"
-#include "misc.h"
-
-// Rename some lengthy type name
-typedef std::complex<double> COMPLEX;
-typedef std::valarray<double> VARRAY_DOUBLE;
-typedef std::valarray<COMPLEX> VARRAY_COMPLEX;
+// Custom libraries
+#include "lib/misc.h"
+#include "lib/dataio.h"
+#include "lib/jknife.h"
 
 // Usage function
 void usage(char *name)
@@ -32,7 +22,7 @@ void usage(char *name)
   fprintf(stderr, "OPTIONS: \n"
                   "    -spacelength (int):  total# of space sites\n"
                   "    -corr (ofname):      output file name of correlator\n"
-                  "    -pot (ofname):       output file name of potential\n"
+                  "    -sphout (ofname):    output file name for spherical coor results\n"
                   "    [-h, --help]:        see usage\n");
 }
 
@@ -43,20 +33,18 @@ void usage(char *name)
 //     |________________________|
 
 // Get the value of correlator on a specific spacial site
-COMPLEX &correlator(COMPLEX *data, int x, int y, int z, int spacelength);
+COMPLX &correlator(COMPLX *data, int x, int y, int z, int spacelength);
 
 // Simplification for the A1+ projection
-COMPLEX sphere_sym(COMPLEX *data, int x, int y, int z, int spacelength);
-COMPLEX a1_sym(COMPLEX *data, int x, int y, int z, int spacelength);
+COMPLX sphere_sym(COMPLX *data, int x, int y, int z, int spacelength);
+COMPLX a1_sym(COMPLX *data, int x, int y, int z, int spacelength);
 
 // A1+ projection main
-void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int file_total);
-// N2 normalization
-void normalization(char *datalist[], char *r_datalist[], int spacelength, int file_total);
-
+void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int totalfile);
+// L2 normalization
+void normalization(char *datalist[], char *r_datalist[], int spacelength, int totalfile);
 // Discrete laplacian
-void laplacian(char *datalist[], char *r_datalist[], int spacelength, int file_total);
-
+void laplacian(char *datalist[], char *r_datalist[], int spacelength, int totalfile);
 // Change to spherical coordinate
 void cartesian_to_spherical(const char *ifname, const char *ofname, int spacelength);
 
@@ -68,7 +56,7 @@ void cartesian_to_spherical(const char *ifname, const char *ofname, int spacelen
 
 int spacelength = 0;
 static const char *corr_ofname = NULL;
-static const char *pot_ofname = NULL;
+static const char *sph_ofname = NULL;
 
 // __________________________________
 //     .________|______|________.
@@ -118,9 +106,9 @@ int main(int argc, char *argv[])
       continue;
     }
 
-    if (strcmp(argv[0], "-pot") == 0)
+    if (strcmp(argv[0], "-sphout") == 0)
     {
-      pot_ofname = argv[1];
+      sph_ofname = argv[1];
       argc -= 2;
       argv += 2;
       continue;
@@ -138,28 +126,30 @@ int main(int argc, char *argv[])
 
   // Initialization
   int maxline = int(pow(spacelength, 3));
-  const int file_total = argc; // total # of files
+  const int totalfile = argc; // total # of files
   fprintf(stderr, "##################################################\n");
-  fprintf(stderr, "# Total of data files: %d\n", file_total);
+  fprintf(stderr, "# Total of data files: %d\n", totalfile);
   fprintf(stderr, "##################################################\n\n");
 
-  //             Main Body
-  // __________________________________
+  // .________________________________.
+  // |                                |
+  // |           Main Body            |
+  // |________________________________|
   //     .________|______|________.
   //     |                        |
-  //     |     4pt Correlator     |
+  //     |    4pt and laplacian   |
   //     |________________________|
 
   if (corr_ofname)
   {
-    // Create some string arrays for temparory file names (A1+, N2, jackknife, laplacian)
-    char *a1_tmp_datalist[file_total], *n2_tmp_datalist[file_total], *js_tmp_datalist[file_total], *lap_tmp_datalist[file_total];
-    for (int i = 0; i < file_total; i++)
+    // Create some string arrays for temparory file names (A1+, L2, jackknife, laplacian)
+    char *a1_tmp_datalist[totalfile], *l2_tmp_datalist[totalfile], *js_tmp_datalist[totalfile], *lap_tmp_datalist[totalfile];
+    for (int i = 0; i < totalfile; i++)
     {
       a1_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char)); // malloc: allocate memory for a pointer
       add_prefix(argv[i], "A1+", a1_tmp_datalist[i]);
-      n2_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
-      add_prefix(argv[i], "n2", n2_tmp_datalist[i]);
+      l2_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
+      add_prefix(argv[i], "n2", l2_tmp_datalist[i]);
       js_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
       add_prefix(argv[i], "js", js_tmp_datalist[i]);
       lap_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
@@ -172,21 +162,28 @@ int main(int argc, char *argv[])
     //     |     A1+ projection     |
     //     |________________________|
 
-    a1_plus(argv, a1_tmp_datalist, spacelength, file_total);
+    a1_plus(argv, a1_tmp_datalist, spacelength, totalfile);
 
     // __________________________________
     //     .________|______|________.
     //     |                        |
-    //     |    N2 and Jackknife    |
+    //     |    L2 and Jackknife    |
     //     |________________________|
+
+    normalization(a1_tmp_datalist, l2_tmp_datalist, spacelength, totalfile);
+
+    jackknife_resample(l2_tmp_datalist, js_tmp_datalist, maxline, totalfile);
+    for (int i = 0; i < totalfile; i++) // Remove L2 normalization temporary files
+      rm(l2_tmp_datalist[i]);
 
     char tmp_result[4096];
     add_prefix(corr_ofname, "tmp", tmp_result);
+    jackknife_average(js_tmp_datalist, tmp_result, maxline, totalfile, DOUBLE_LINE);
+    for (int i = 0; i < totalfile; i++) // Remove JS resample temporary files
+      rm(js_tmp_datalist[i]);
 
-    normalization(a1_tmp_datalist, n2_tmp_datalist, spacelength, file_total);
-    jackknife_resample(n2_tmp_datalist, js_tmp_datalist, maxline, file_total);
-    jackknife_average(js_tmp_datalist, tmp_result, maxline, file_total);
     cartesian_to_spherical(tmp_result, corr_ofname, spacelength);
+    rm(tmp_result); // Remove result temporary file
 
     // __________________________________
     //     .________|______|________.
@@ -194,27 +191,30 @@ int main(int argc, char *argv[])
     //     |   Discrete Laplacian   |
     //     |________________________|
 
-    laplacian(a1_tmp_datalist, lap_tmp_datalist, spacelength, file_total);
+    jackknife_resample(a1_tmp_datalist, js_tmp_datalist, maxline, totalfile);
+    for (int i = 0; i < totalfile; i++) // Remove A1+ projection temporary files
+      rm(a1_tmp_datalist[i]);
 
-    // Remove temporary files
-    for (int i = 0; i < file_total; i++)
-    {
-      if (remove(a1_tmp_datalist[i]))
-        perror(a1_tmp_datalist[i]);
-      if (remove(n2_tmp_datalist[i]))
-        perror(n2_tmp_datalist[i]);
-      if (remove(js_tmp_datalist[i]))
-        perror(js_tmp_datalist[i]);
-    }
-    if (remove(tmp_result))
-      perror(tmp_result);
+    laplacian(js_tmp_datalist, lap_tmp_datalist, spacelength, totalfile);
+    for (int i = 0; i < totalfile; i++) // Remove JS resample temporary files
+      rm(js_tmp_datalist[i]);
+    
+    char lap_tmp_result[4096];
+    add_prefix(corr_ofname, "laptmp", lap_tmp_result);
+    jackknife_average(lap_tmp_datalist, lap_tmp_result, maxline, totalfile, DOUBLE_LINE);
+
+    char lap_result[4096];
+    add_prefix(corr_ofname, "lap", lap_result);
+    cartesian_to_spherical(lap_tmp_result, lap_result, spacelength);
+    rm(lap_tmp_result); // Remove result temporary file
+
     fprintf(stderr, "Finished! \n\n");
 
     // Finalization for the string arrays
-    for (int i = 0; i < file_total; i++)
+    for (int i = 0; i < totalfile; i++)
     {
       free(a1_tmp_datalist[i]);
-      free(n2_tmp_datalist[i]);
+      free(l2_tmp_datalist[i]);
       free(js_tmp_datalist[i]);
       free(lap_tmp_datalist[i]);
     }
@@ -223,19 +223,11 @@ int main(int argc, char *argv[])
   // __________________________________
   //     .________|______|________.
   //     |                        |
-  //     |     Calc Potential     |
+  //     |       Cart to sph      |
   //     |________________________|
 
-  if (pot_ofname)
+  if (sph_ofname)
   {
-    // Create some string arrays for temparory file names (jackknife)
-    char *js_tmp_datalist[file_total];
-    for (int i = 0; i < file_total; i++)
-    {
-      js_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
-      add_prefix(argv[i], "js", js_tmp_datalist[i]);
-    }
-
     // __________________________________
     //     .________|______|________.
     //     |                        |
@@ -243,27 +235,13 @@ int main(int argc, char *argv[])
     //     |________________________|
 
     char tmp_result[4096];
-    add_prefix(pot_ofname, "tmp", tmp_result);
+    add_prefix(sph_ofname, "tmp", tmp_result);
+    jackknife_average(argv, tmp_result, maxline, totalfile, DOUBLE_LINE);
 
-    jackknife_resample(argv, js_tmp_datalist, maxline, file_total);
-    jackknife_average(js_tmp_datalist, tmp_result, maxline, file_total);
-    cartesian_to_spherical(tmp_result, pot_ofname, spacelength);
+    cartesian_to_spherical(tmp_result, sph_ofname, spacelength);
+    rm(tmp_result);
 
-    // Remove temporary files
-    for (int i = 0; i < file_total; i++)
-    {
-      if (remove(js_tmp_datalist[i]))
-        perror(js_tmp_datalist[i]);
-    }
-    if (remove(tmp_result))
-      perror(tmp_result);
     fprintf(stderr, "Finished! \n\n");
-
-    // Finalization for the string arrays
-    for (int i = 0; i < file_total; i++)
-    {
-      free(js_tmp_datalist[i]);
-    }
   }
 
   return 0;
@@ -274,33 +252,33 @@ int main(int argc, char *argv[])
 //     |                        |
 //     |  Custom Functions Def  |
 //     |________________________|
-//
-inline COMPLEX &correlator(COMPLEX *data, int x, int y, int z, int spacelength)
+
+inline COMPLX &correlator(COMPLX *data, int x, int y, int z, int spacelength)
 {
   x = (x + spacelength) % spacelength;
   y = (y + spacelength) % spacelength;
   z = (z + spacelength) % spacelength;
-  COMPLEX &corr_r = data[x + spacelength * (y + spacelength * z)];
+  COMPLX &corr_r = data[x + spacelength * (y + spacelength * z)];
   return corr_r;
 }
 
-inline COMPLEX sphere_sym(COMPLEX *data, int x, int y, int z, int spacelength)
+inline COMPLX sphere_sym(COMPLX *data, int x, int y, int z, int spacelength)
 {
   return (correlator(data, x, y, z, spacelength) + correlator(data, y, z, x, spacelength) + correlator(data, z, x, y, spacelength) + correlator(data, x, z, y, spacelength) + correlator(data, z, y, x, spacelength) + correlator(data, y, x, z, spacelength)) / 6.0;
 }
 
-inline COMPLEX a1_sym(COMPLEX *data, int x, int y, int z, int spacelength)
+inline COMPLX a1_sym(COMPLX *data, int x, int y, int z, int spacelength)
 {
   return (sphere_sym(data, x, y, z, spacelength) + sphere_sym(data, x, y, spacelength - z, spacelength) + sphere_sym(data, x, spacelength - y, z, spacelength) + sphere_sym(data, x, spacelength - y, spacelength - z, spacelength) + sphere_sym(data, spacelength - x, y, z, spacelength) + sphere_sym(data, spacelength - x, y, spacelength - z, spacelength) + sphere_sym(data, spacelength - x, spacelength - y, z, spacelength) + sphere_sym(data, spacelength - x, spacelength - y, spacelength - z, spacelength)) / 8.0;
 }
 
-void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int file_total)
+void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int totalfile)
 {
   int maxline = int(pow(spacelength, 3));
 
-  for (int i = 0; i < file_total; i++)
+  for (int i = 0; i < totalfile; i++)
   {
-    COMPLEX tmp[maxline], result[maxline];
+    COMPLX tmp[maxline], result[maxline];
     for (int j = 0; j < maxline; j++) // Initialize the empty arrays
     {
       tmp[j] = result[j] = 0.0;
@@ -319,13 +297,13 @@ void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int file_tot
   }
 }
 
-void normalization(char *datalist[], char *r_datalist[], int spacelength, int file_total)
+void normalization(char *datalist[], char *r_datalist[], int spacelength, int totalfile)
 {
   int maxline = int(pow(spacelength, 3));
 
-  for (int i = 0; i < file_total; i++)
+  for (int i = 0; i < totalfile; i++)
   {
-    COMPLEX tmp[maxline], result[maxline];
+    COMPLX tmp[maxline], result[maxline];
     for (int j = 0; j < maxline; j++) // Initialize the empty arrays
     {
       tmp[j] = result[j] = 0.0;
@@ -333,7 +311,7 @@ void normalization(char *datalist[], char *r_datalist[], int spacelength, int fi
 
     read_bin(datalist[i], maxline, tmp);
 
-    double norm = 0.0;
+    DOUBLE norm = 0.0;
     for (int j = 0; j < maxline; j++)
     {
       norm += sqrt((tmp[j] * std::conj(tmp[j])).real());
@@ -348,13 +326,13 @@ void normalization(char *datalist[], char *r_datalist[], int spacelength, int fi
   }
 }
 
-void laplacian(char *datalist[], char *r_datalist[], int spacelength, int file_total)
+void laplacian(char *datalist[], char *r_datalist[], int spacelength, int totalfile)
 {
   int maxline = int(pow(spacelength, 3));
 
-  for (int i = 0; i < file_total; i++)
+  for (int i = 0; i < totalfile; i++)
   {
-    COMPLEX tmp[maxline], result[maxline];
+    COMPLX tmp[maxline], result[maxline];
     for (int j = 0; j < maxline; j++) // Initialize the empty arrays
     {
       tmp[j] = result[j] = 0.0;
@@ -377,7 +355,7 @@ void cartesian_to_spherical(const char *ifname, const char *ofname, int spacelen
 {
   int maxline = pow(spacelength, 3);
 
-  COMPLEX tmp[maxline];
+  COMPLX tmp[maxline];
   for (int j = 0; j < maxline; j++) // Initialize the empty arrays
   {
     tmp[j] = 0.0;
@@ -399,9 +377,9 @@ void cartesian_to_spherical(const char *ifname, const char *ofname, int spacelen
     for (int j = i; j < spacelength / 2 + 1; j++)
       for (int k = j; k < spacelength / 2 + 1; k++)
       {
-        double value, variance, distance = 0.0;
+        DOUBLE value, variance, distance = 0.0;
 
-        distance = sqrt(pow(double(i), 2) + pow(double(j), 2) + pow(double(k), 2));
+        distance = sqrt(pow(DOUBLE(i), 2) + pow(DOUBLE(j), 2) + pow(DOUBLE(k), 2));
         value = correlator(tmp, i, j, k, spacelength).real();
         variance = correlator(tmp, i, j, k, spacelength).imag();
 

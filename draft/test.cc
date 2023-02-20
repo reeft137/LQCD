@@ -6,7 +6,7 @@
 #include <valarray>
 #include <sys/stat.h>
 #include <math.h>
-#include <sys/types.h>
+// #include <sys/types.h>
 
 typedef std::complex<double> COMPLEX;
 typedef std::valarray<double> VARRAY_DOUBLE;
@@ -17,15 +17,26 @@ int main(int argc, char *argv[])
   argc--;
   argv++;
 
-  FILE* fp = NULL;
-  fp = fopen("./test.txt", "w");
-  if(fp == NULL)
-  {
-    perror("./test.txt");
-    exit(1);
-  }
+  // VARRAY_COMPLEX test(3);
+  // VARRAY_DOUBLE rtest(4);
+  // test = 0.0;
+  // rtest = 0.0;
 
-  fprintf(fp, "hello, world!");
+  // printf("%lu\n", sizeof(test[0])/sizeof(double));
+
+  for (size_t i = 0; i < 99; i++)
+    printf("%lu\n", i);
+  
+
+  // FILE* fp = NULL;
+  // fp = fopen("./test.txt", "w");
+  // if(fp == NULL)
+  // {
+  //   perror("./test.txt");
+  //   exit(1);
+  // }
+
+  // fprintf(fp, "hello, world!");
 
   // int index = xsite + spacelength * (ysite + spacelength * zsite);
   // int x, y, z = 0;
