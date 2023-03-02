@@ -8,9 +8,9 @@
  */
 
 // Custom libraries
-#include "lib/misc.h"
-#include "lib/dataio.h"
-#include "lib/jknife.h"
+#include <lqcd/misc.h>
+#include <lqcd/dataio.h>
+#include <lqcd/jknife.h>
 
 // Usage function
 void usage(char *name)
@@ -33,11 +33,24 @@ void usage(char *name)
 //     |________________________|
 
 // Time reversal
-void time_reverse_2pt(char *datalist[], char *r_datalist[], int timelength, int totalfile);
+void time_reverse_2pt(char *rawdlist[], char *resultlist[], int timelength, int N_totalfile);
 
 // Effective mass
-void exp_mass(char *datalist[], char *r_datalist[], int timelength, int totalfile);
-void csh_mass(char *datalist[], char *r_datalist[], int timelength, int totalfile);
+void exp_mass(char *rawdlist[], char *resultlist[], int timelength, int N_totalfile);
+void csh_mass(char *rawdlist[], char *resultlist[], int timelength, int N_totalfile);
+
+// Create dir and delete files
+inline void mk755dir(const char *dir)
+{
+  if (mkdir(dir, 0000755))
+    perror(dir);
+}
+
+inline void rm(const char *dir)
+{
+  if (remove(dir))
+    perror(dir);
+}
 
 // __________________________________
 //     .________|______|________.
@@ -132,7 +145,11 @@ int main(int argc, char *argv[])
   }
 
   // Initialization
-  int totalfile = argc; // # of data files
+  const int N_totalfile = argc; // # of data files
+  fprintf(stderr, "##################################################\n");
+  fprintf(stderr, "# Total of data files: %d\n", N_totalfile);
+  fprintf(stderr, "# # of time sites:     %d\n", timelength);
+  fprintf(stderr, "##################################################\n\n");
 
   // .________________________________.
   // |                                |
@@ -146,16 +163,19 @@ int main(int argc, char *argv[])
   if (corr_ofname)
   {
     // Create some string arrays for temparory file names (time reversed, jackknife, exp mass, csh mass)
-    char *tr_tmp_datalist[totalfile], *js_tmp_datalist[totalfile], *exp_tmp_datalist[totalfile], *csh_tmp_datalist[totalfile];
-    for (int i = 0; i < totalfile; i++)
+    char *tr_tmp_datalist[N_totalfile], *js_tmp_datalist[N_totalfile], *exp_tmp_datalist[N_totalfile], *csh_tmp_datalist[N_totalfile];
+    for (int i = 0; i < N_totalfile; i++)
     {
-      tr_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char)); // malloc: allocate memory for a pointer
+      tr_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
       add_prefix(argv[i], "tr", tr_tmp_datalist[i]);
-      js_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char)); // malloc: allocate memory for a pointer
+
+      js_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
       add_prefix(argv[i], "js", js_tmp_datalist[i]);
-      exp_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char)); // malloc: allocate memory for a pointer
+
+      exp_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
       add_prefix(argv[i], "exp", exp_tmp_datalist[i]);
-      csh_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char)); // malloc: allocate memory for a pointer
+
+      csh_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char));
       add_prefix(argv[i], "csh", csh_tmp_datalist[i]);
     }
 
@@ -165,15 +185,15 @@ int main(int argc, char *argv[])
     //     |    TR and Jackknife    |
     //     |________________________|
 
-    time_reverse_2pt(argv, tr_tmp_datalist, totalfile, timelength);
+    time_reverse_2pt(argv, tr_tmp_datalist, timelength, N_totalfile);
 
-    jackknife_resample(tr_tmp_datalist, js_tmp_datalist, timelength, totalfile);
-    for (int i = 0; i < totalfile; i++) // Remove time reversed temporary files
+    jackknife_resample(tr_tmp_datalist, js_tmp_datalist, timelength, N_totalfile);
+    for (int i = 0; i < N_totalfile; i++) // Remove time reversed temporary files
       rm(tr_tmp_datalist[i]);
 
     char tmp_result[4096];
     add_prefix(corr_ofname, "tmp", tmp_result);
-    jackknife_average(js_tmp_datalist, tmp_result, timelength, totalfile, DOUBLE_LINE);
+    jackknife_average(js_tmp_datalist, tmp_result, timelength, N_totalfile, DOUBLE_LINE);
 
     bin2txt(tmp_result, corr_ofname, timelength);
     rm(tmp_result); // Remove result temporary file
@@ -190,16 +210,15 @@ int main(int argc, char *argv[])
     add_prefix(corr_ofname, "etmp", expm_tmp);
     add_prefix(corr_ofname, "ctmp", cshm_tmp);
 
-    exp_mass(js_tmp_datalist, exp_tmp_datalist, timelength, totalfile);
-    csh_mass(js_tmp_datalist, csh_tmp_datalist, timelength, totalfile);
+    exp_mass(js_tmp_datalist, exp_tmp_datalist, timelength, N_totalfile);
+    csh_mass(js_tmp_datalist, csh_tmp_datalist, timelength, N_totalfile);
 
-    jackknife_average(exp_tmp_datalist, expm_tmp, timelength, totalfile, DOUBLE_LINE);
-    jackknife_average(csh_tmp_datalist, cshm_tmp, timelength, totalfile, DOUBLE_LINE);
-    for (int i = 0; i < totalfile; i++) // Remove exp effmass temporary files
-    {
+    jackknife_average(exp_tmp_datalist, expm_tmp, timelength, N_totalfile, SINGLE_LINE);
+    for (int i = 0; i < N_totalfile; i++) // Remove exp effmass temporary files
       rm(exp_tmp_datalist[i]);
+    jackknife_average(csh_tmp_datalist, cshm_tmp, timelength, N_totalfile, SINGLE_LINE);
+    for (int i = 0; i < N_totalfile; i++) // Remove csh effmass temporary files
       rm(csh_tmp_datalist[i]);
-    }
 
     bin2txt(expm_tmp, expm, timelength);
     bin2txt(cshm_tmp, cshm, timelength);
@@ -207,7 +226,7 @@ int main(int argc, char *argv[])
     rm(cshm_tmp);
 
     // Finalization for the string arrays
-    for (int i = 0; i < totalfile; i++)
+    for (int i = 0; i < N_totalfile; i++)
     {
       free(tr_tmp_datalist[i]);
       free(js_tmp_datalist[i]);
@@ -235,52 +254,54 @@ int main(int argc, char *argv[])
 //     |  Custom Functions Def  |
 //     |________________________|
 
-void time_reverse_2pt(char *datalist[], char *r_datalist[], int timelength, int totalfile)
+void time_reverse_2pt(char *rawdlist[], char *resultlist[], int timelength, int N_totalfile)
 {
-  for (int i = 0; i < totalfile; i++)
+  for (int i = 0; i < N_totalfile; i++)
   {
-    CVARRAY data;
-    data = 0.0;
-    read_bin(datalist[i], timelength, data);
+    COMPLX raw[timelength], data[timelength];
+    for (int j = 0; j < timelength; j++)
+      raw[j] = data[j] = 0.0;
 
-    for (int i = 0; i < timelength / 2 + 1; i++)
-    {
-      data[i] = (data[i] + data[(timelength - i) % timelength]) * 0.5;
-    }
+    read_bin(rawdlist[i], timelength, raw);
 
-    write_bin(r_datalist[i], timelength, data);
+    for (int j = 0; j < timelength; j++)
+      data[j] = (raw[j] + raw[(timelength - j) % timelength]) * 0.5;
+
+    write_bin(resultlist[i], timelength, data);
   }
 }
 
-void exp_mass(char *datalist[], char *r_datalist[], int timelength, int totalfile)
+void exp_mass(char *rawdlist[], char *resultlist[], int timelength, int N_totalfile)
 {
-  for (int i = 0; i < totalfile; i++)
+  for (int i = 0; i < N_totalfile; i++)
   {
     CVARRAY raw(timelength);
     raw = 0.0;
-    read_bin(datalist[i], timelength, raw);
+    read_bin(rawdlist[i], timelength, raw);
 
     DVARRAY data(timelength), effmass(timelength);
     data = effmass = 0.0;
 
     keep_real(raw, data, timelength);
 
-    for (int i = 0; i < timelength / 2 + 1; i++)
+    for (int j = 0; j < timelength; j++)
     {
-      effmass[i] = log(data[i] / data[(i + 1) % timelength]);
+      effmass[j] = log(data[j] / data[(j + 1) % timelength]);
     }
 
-    write_bin(r_datalist[i], timelength, data);
+    // fprintf(stderr, "DEBUG data[0]: %1.12e\n", effmass[0]);
+
+    write_bin(resultlist[i], timelength, effmass);
   }
 }
 
 DOUBLE coshtype_mass(int t1, int t2, DOUBLE corr1, DOUBLE corr2, int timelength)
 {
-#define JMAX 4000
+#define JMAX 100
 #define M0 0.001
 #define M1 10.0
 #define MACC 1.0e-12
-#define coshtype(m) corr1 / corr2 - cosh(m * (timelength / 2.0 - t1)) / cosh(m * (timelength / 2.0 - t2))
+#define coshtype(m) (corr1 / corr2 - cosh((m) * (timelength / 2.0 - t1)) / cosh((m) * (timelength / 2.0 - t2)))
 
   DOUBLE dm, f, fmid, mmid, mass;
 
@@ -288,8 +309,8 @@ DOUBLE coshtype_mass(int t1, int t2, DOUBLE corr1, DOUBLE corr2, int timelength)
   fmid = coshtype(M1);
   if (f * fmid >= 0.0)
   {
-    fprintf(stderr, "Root must be bracketed for bisection in RTBIS");
-    exit(1);
+    fprintf(stderr, "Root must be bracketed for bisection in RTBIS\n");
+    return NAN;
   }
   mass = f < 0.0 ? (dm = M1 - M0, M0) : (dm = M0 - M1, M1);
   for (int j = 1; j <= JMAX; j++)
@@ -305,26 +326,26 @@ DOUBLE coshtype_mass(int t1, int t2, DOUBLE corr1, DOUBLE corr2, int timelength)
   return 0.0;
 }
 
-void csh_mass(char *datalist[], char *r_datalist[], int timelength, int totalfile)
+void csh_mass(char *rawdlist[], char *resultlist[], int timelength, int N_totalfile)
 {
-  for (int i = 0; i < totalfile; i++)
+  for (int i = 0; i < N_totalfile; i++)
   {
     CVARRAY raw(timelength);
     raw = 0.0;
-    read_bin(datalist[i], timelength, raw);
+    read_bin(rawdlist[i], timelength, raw);
 
     DVARRAY data(timelength), effmass(timelength);
     data = effmass = 0.0;
 
     keep_real(raw, data, timelength);
 
-    for (int i = 0; i < timelength / 2 + 1; i++)
+    for (int j = 0; j < timelength; j++)
     {
-      int t1 = i;
-      int t2 = (i + 1) % timelength;
-      effmass[i] = coshtype_mass(t1, t2, data[t1], data[t2], timelength);
+      int t1 = j;
+      int t2 = (j + 1) % timelength;
+      effmass[j] = coshtype_mass(t1, t2, data[t1], data[t2], timelength);
     }
 
-    write_bin(r_datalist[i], timelength, data);
+    write_bin(resultlist[i], timelength, effmass);
   }
 }

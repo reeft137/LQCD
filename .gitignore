@@ -40,5 +40,6 @@ src/correlator
 tmp
 test
 misc
+log
 .local
 .vscode

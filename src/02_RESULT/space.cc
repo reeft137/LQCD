@@ -9,9 +9,9 @@
  */
 
 // Custom libraries
-#include "lib/misc.h"
-#include "lib/dataio.h"
-#include "lib/jknife.h"
+#include <lqcd/misc.h>
+#include <lqcd/dataio.h>
+#include <lqcd/jknife.h>
 
 // Usage function
 void usage(char *name)
@@ -40,13 +40,26 @@ COMPLX sphere_sym(COMPLX *data, int x, int y, int z, int spacelength);
 COMPLX a1_sym(COMPLX *data, int x, int y, int z, int spacelength);
 
 // A1+ projection main
-void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int totalfile);
+void a1_plus(char *rawdlist[], char *resultlist[], int spacelength, int N_totalfile);
 // L2 normalization
-void normalization(char *datalist[], char *r_datalist[], int spacelength, int totalfile);
+void normalization(char *rawdlist[], char *resultlist[], int spacelength, int N_totalfile);
 // Discrete laplacian
-void laplacian(char *datalist[], char *r_datalist[], int spacelength, int totalfile);
+void laplacian(char *rawdlist[], char *resultlist[], int spacelength, int N_totalfile);
 // Change to spherical coordinate
 void cartesian_to_spherical(const char *ifname, const char *ofname, int spacelength);
+
+// Create dir and delete files
+inline void mk755dir(const char *dir)
+{
+  if (mkdir(dir, 0000755))
+    perror(dir);
+}
+
+inline void rm(const char *dir)
+{
+  if (remove(dir))
+    perror(dir);
+}
 
 // __________________________________
 //     .________|______|________.
@@ -126,9 +139,10 @@ int main(int argc, char *argv[])
 
   // Initialization
   int maxline = int(pow(spacelength, 3));
-  const int totalfile = argc; // total # of files
+  const int N_totalfile = argc; // total # of files
   fprintf(stderr, "##################################################\n");
-  fprintf(stderr, "# Total of data files: %d\n", totalfile);
+  fprintf(stderr, "# Total of data files: %d\n", N_totalfile);
+  fprintf(stderr, "# # of space sites:    %d\n", spacelength);
   fprintf(stderr, "##################################################\n\n");
 
   // .________________________________.
@@ -143,8 +157,8 @@ int main(int argc, char *argv[])
   if (corr_ofname)
   {
     // Create some string arrays for temparory file names (A1+, L2, jackknife, laplacian)
-    char *a1_tmp_datalist[totalfile], *l2_tmp_datalist[totalfile], *js_tmp_datalist[totalfile], *lap_tmp_datalist[totalfile];
-    for (int i = 0; i < totalfile; i++)
+    char *a1_tmp_datalist[N_totalfile], *l2_tmp_datalist[N_totalfile], *js_tmp_datalist[N_totalfile], *lap_tmp_datalist[N_totalfile];
+    for (int i = 0; i < N_totalfile; i++)
     {
       a1_tmp_datalist[i] = (char *)malloc(4096 * sizeof(char)); // malloc: allocate memory for a pointer
       add_prefix(argv[i], "A1+", a1_tmp_datalist[i]);
@@ -162,7 +176,7 @@ int main(int argc, char *argv[])
     //     |     A1+ projection     |
     //     |________________________|
 
-    a1_plus(argv, a1_tmp_datalist, spacelength, totalfile);
+    a1_plus(argv, a1_tmp_datalist, spacelength, N_totalfile);
 
     // __________________________________
     //     .________|______|________.
@@ -170,16 +184,16 @@ int main(int argc, char *argv[])
     //     |    L2 and Jackknife    |
     //     |________________________|
 
-    normalization(a1_tmp_datalist, l2_tmp_datalist, spacelength, totalfile);
+    normalization(a1_tmp_datalist, l2_tmp_datalist, spacelength, N_totalfile);
 
-    jackknife_resample(l2_tmp_datalist, js_tmp_datalist, maxline, totalfile);
-    for (int i = 0; i < totalfile; i++) // Remove L2 normalization temporary files
+    jackknife_resample(l2_tmp_datalist, js_tmp_datalist, maxline, N_totalfile);
+    for (int i = 0; i < N_totalfile; i++) // Remove L2 normalization temporary files
       rm(l2_tmp_datalist[i]);
 
     char tmp_result[4096];
     add_prefix(corr_ofname, "tmp", tmp_result);
-    jackknife_average(js_tmp_datalist, tmp_result, maxline, totalfile, DOUBLE_LINE);
-    for (int i = 0; i < totalfile; i++) // Remove JS resample temporary files
+    jackknife_average(js_tmp_datalist, tmp_result, maxline, N_totalfile, DOUBLE_LINE);
+    for (int i = 0; i < N_totalfile; i++) // Remove JS resample temporary files
       rm(js_tmp_datalist[i]);
 
     cartesian_to_spherical(tmp_result, corr_ofname, spacelength);
@@ -191,17 +205,17 @@ int main(int argc, char *argv[])
     //     |   Discrete Laplacian   |
     //     |________________________|
 
-    jackknife_resample(a1_tmp_datalist, js_tmp_datalist, maxline, totalfile);
-    for (int i = 0; i < totalfile; i++) // Remove A1+ projection temporary files
+    jackknife_resample(a1_tmp_datalist, js_tmp_datalist, maxline, N_totalfile);
+    for (int i = 0; i < N_totalfile; i++) // Remove A1+ projection temporary files
       rm(a1_tmp_datalist[i]);
 
-    laplacian(js_tmp_datalist, lap_tmp_datalist, spacelength, totalfile);
-    for (int i = 0; i < totalfile; i++) // Remove JS resample temporary files
+    laplacian(js_tmp_datalist, lap_tmp_datalist, spacelength, N_totalfile);
+    for (int i = 0; i < N_totalfile; i++) // Remove JS resample temporary files
       rm(js_tmp_datalist[i]);
-    
+
     char lap_tmp_result[4096];
     add_prefix(corr_ofname, "laptmp", lap_tmp_result);
-    jackknife_average(lap_tmp_datalist, lap_tmp_result, maxline, totalfile, DOUBLE_LINE);
+    jackknife_average(lap_tmp_datalist, lap_tmp_result, maxline, N_totalfile, DOUBLE_LINE);
 
     char lap_result[4096];
     add_prefix(corr_ofname, "lap", lap_result);
@@ -211,7 +225,7 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Finished! \n\n");
 
     // Finalization for the string arrays
-    for (int i = 0; i < totalfile; i++)
+    for (int i = 0; i < N_totalfile; i++)
     {
       free(a1_tmp_datalist[i]);
       free(l2_tmp_datalist[i]);
@@ -236,7 +250,7 @@ int main(int argc, char *argv[])
 
     char tmp_result[4096];
     add_prefix(sph_ofname, "tmp", tmp_result);
-    jackknife_average(argv, tmp_result, maxline, totalfile, DOUBLE_LINE);
+    jackknife_average(argv, tmp_result, maxline, N_totalfile, DOUBLE_LINE);
 
     cartesian_to_spherical(tmp_result, sph_ofname, spacelength);
     rm(tmp_result);
@@ -272,11 +286,11 @@ inline COMPLX a1_sym(COMPLX *data, int x, int y, int z, int spacelength)
   return (sphere_sym(data, x, y, z, spacelength) + sphere_sym(data, x, y, spacelength - z, spacelength) + sphere_sym(data, x, spacelength - y, z, spacelength) + sphere_sym(data, x, spacelength - y, spacelength - z, spacelength) + sphere_sym(data, spacelength - x, y, z, spacelength) + sphere_sym(data, spacelength - x, y, spacelength - z, spacelength) + sphere_sym(data, spacelength - x, spacelength - y, z, spacelength) + sphere_sym(data, spacelength - x, spacelength - y, spacelength - z, spacelength)) / 8.0;
 }
 
-void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int totalfile)
+void a1_plus(char *rawdlist[], char *resultlist[], int spacelength, int N_totalfile)
 {
   int maxline = int(pow(spacelength, 3));
 
-  for (int i = 0; i < totalfile; i++)
+  for (int i = 0; i < N_totalfile; i++)
   {
     COMPLX tmp[maxline], result[maxline];
     for (int j = 0; j < maxline; j++) // Initialize the empty arrays
@@ -284,7 +298,7 @@ void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int totalfil
       tmp[j] = result[j] = 0.0;
     }
 
-    read_bin(datalist[i], maxline, tmp);
+    read_bin(rawdlist[i], maxline, tmp);
 
     for (int ix = 0; ix < spacelength; ix++)
       for (int iy = 0; iy < spacelength; iy++)
@@ -293,15 +307,15 @@ void a1_plus(char *datalist[], char *r_datalist[], int spacelength, int totalfil
           correlator(result, ix, iy, iz, spacelength) = a1_sym(tmp, ix, iy, iz, spacelength);
         }
 
-    write_bin(r_datalist[i], maxline, result);
+    write_bin(resultlist[i], maxline, result);
   }
 }
 
-void normalization(char *datalist[], char *r_datalist[], int spacelength, int totalfile)
+void normalization(char *rawdlist[], char *resultlist[], int spacelength, int N_totalfile)
 {
   int maxline = int(pow(spacelength, 3));
 
-  for (int i = 0; i < totalfile; i++)
+  for (int i = 0; i < N_totalfile; i++)
   {
     COMPLX tmp[maxline], result[maxline];
     for (int j = 0; j < maxline; j++) // Initialize the empty arrays
@@ -309,7 +323,7 @@ void normalization(char *datalist[], char *r_datalist[], int spacelength, int to
       tmp[j] = result[j] = 0.0;
     }
 
-    read_bin(datalist[i], maxline, tmp);
+    read_bin(rawdlist[i], maxline, tmp);
 
     DOUBLE norm = 0.0;
     for (int j = 0; j < maxline; j++)
@@ -322,15 +336,15 @@ void normalization(char *datalist[], char *r_datalist[], int spacelength, int to
       result[j] = tmp[j] / norm;
     }
 
-    write_bin(r_datalist[i], maxline, result);
+    write_bin(resultlist[i], maxline, result);
   }
 }
 
-void laplacian(char *datalist[], char *r_datalist[], int spacelength, int totalfile)
+void laplacian(char *rawdlist[], char *resultlist[], int spacelength, int N_totalfile)
 {
   int maxline = int(pow(spacelength, 3));
 
-  for (int i = 0; i < totalfile; i++)
+  for (int i = 0; i < N_totalfile; i++)
   {
     COMPLX tmp[maxline], result[maxline];
     for (int j = 0; j < maxline; j++) // Initialize the empty arrays
@@ -338,7 +352,7 @@ void laplacian(char *datalist[], char *r_datalist[], int spacelength, int totalf
       tmp[j] = result[j] = 0.0;
     }
 
-    read_bin(datalist[i], maxline, tmp);
+    read_bin(rawdlist[i], maxline, tmp);
 
     for (int ix = 0; ix < spacelength; ix++)
       for (int iy = 0; iy < spacelength; iy++)
@@ -347,7 +361,7 @@ void laplacian(char *datalist[], char *r_datalist[], int spacelength, int totalf
           correlator(result, ix, iy, iz, spacelength) = (correlator(tmp, ix + 1, iy, iz, spacelength) + correlator(tmp, ix - 1, iy, iz, spacelength) + correlator(tmp, ix, iy + 1, iz, spacelength) + correlator(tmp, ix, iy - 1, iz, spacelength) + correlator(tmp, ix, iy, iz + 1, spacelength) + correlator(tmp, ix, iy, iz - 1, spacelength) - 6.0 * correlator(tmp, ix, iy, iz, spacelength)) / correlator(tmp, ix, iy, iz, spacelength);
         }
 
-    write_bin(r_datalist[i], maxline, result);
+    write_bin(resultlist[i], maxline, result);
   }
 }
 

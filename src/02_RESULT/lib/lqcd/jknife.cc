@@ -12,17 +12,17 @@
 #include "jknife.h"
 
 // Jackknife resampling
-void jackknife_resample(char *rawdata[], char *realresult[], int maxline, int totalfile)
+void jackknife_resample(char *rawdlist[], char *reallist[], int maxline, int N_totalfile)
 {
   DVARRAY sum(maxline), sum_square(maxline), value(maxline), var(maxline);
   sum = sum_square = value = var = 0.0;
 
   // First round: Get sum and sum^2 of all data
-  for (int i = 0; i < totalfile; i++)
+  for (int i = 0; i < N_totalfile; i++)
   {
     CVARRAY tmp(maxline);
     tmp = 0.0;
-    read_bin(rawdata[i], maxline, tmp);
+    read_bin(rawdlist[i], maxline, tmp);
 
     DVARRAY rtmp(maxline);
     rtmp = 0.0;
@@ -33,20 +33,20 @@ void jackknife_resample(char *rawdata[], char *realresult[], int maxline, int to
   }
 
   // Second round: Generate the Jackknife sampled data and calculate the variance
-  //               Also, save files to realresult[]
-  for (int i = 0; i < totalfile; i++)
+  //               Also, save files to reallist[]
+  for (int i = 0; i < N_totalfile; i++)
   {
     CVARRAY tmp(maxline);
     tmp = 0.0;
-    read_bin(rawdata[i], maxline, tmp);
+    read_bin(rawdlist[i], maxline, tmp);
 
     DVARRAY rtmp(maxline);
     rtmp = 0.0;
     keep_real(tmp, rtmp, maxline);
 
-    value = (sum - rtmp) / (totalfile - 1.0);
+    value = (sum - rtmp) / (N_totalfile - 1.0);
     // About this variance, please refer to eq.(7.37) on P.383, Montvay LQCD book
-    var = sqrt(((sum_square - pow(rtmp, 2)) / DOUBLE(totalfile - 1.0) - pow(value, 2)) / DOUBLE(totalfile - 2.0));
+    var = sqrt(((sum_square - pow(rtmp, 2)) / DOUBLE(N_totalfile - 1.0) - pow(value, 2)) / DOUBLE(N_totalfile - 2.0));
 
     CVARRAY result(maxline);
     result = 0.0;
@@ -56,12 +56,12 @@ void jackknife_resample(char *rawdata[], char *realresult[], int maxline, int to
       result[j].imag(var[j]);
     }
 
-    write_bin(realresult[i], maxline, result);
+    write_bin(reallist[i], maxline, result);
   }
 }
 
 // Another version that also keeps the imaginary part
-void jackknife_resample(char *rawdata[], char *realresult[], char *imagresult[], int maxline, int totalfile)
+void jackknife_resample(char *rawdlist[], char *reallist[], char *imaglist[], int maxline, int N_totalfile)
 {
   DVARRAY rsum(maxline), rsum_square(maxline), rvalue(maxline), rvar(maxline);
   DVARRAY isum(maxline), isum_square(maxline), ivalue(maxline), ivar(maxline);
@@ -69,11 +69,11 @@ void jackknife_resample(char *rawdata[], char *realresult[], char *imagresult[],
   isum = isum_square = ivalue = ivar = 0.0;
 
   // First round: Get sum and sum^2 of all data
-  for (int i = 0; i < totalfile; i++)
+  for (int i = 0; i < N_totalfile; i++)
   {
     CVARRAY tmp(maxline);
     tmp = 0.0;
-    read_bin(rawdata[i], maxline, tmp);
+    read_bin(rawdlist[i], maxline, tmp);
 
     DVARRAY rtmp(maxline), itmp(maxline);
     rtmp = itmp = 0.0;
@@ -88,21 +88,21 @@ void jackknife_resample(char *rawdata[], char *realresult[], char *imagresult[],
   }
 
   // Second round: Generate the Jackknife sampled data and calculate the variance
-  //               Also, save files to realresult[]
-  for (int i = 0; i < totalfile; i++)
+  //               Also, save files to reallist[]
+  for (int i = 0; i < N_totalfile; i++)
   {
     CVARRAY tmp(maxline);
     tmp = 0.0;
-    read_bin(rawdata[i], maxline, tmp);
+    read_bin(rawdlist[i], maxline, tmp);
 
     DVARRAY rtmp(maxline), itmp(maxline);
     rtmp = itmp = 0.0;
     keep_real(tmp, rtmp, maxline);
     keep_imag(tmp, itmp, maxline);
 
-    rvalue = (rsum - rtmp) / (totalfile - 1.0);
+    rvalue = (rsum - rtmp) / (N_totalfile - 1.0);
     // About this variance, please refer to eq.(7.37) on P.383, Montvay LQCD book
-    rvar = sqrt(((rsum_square - pow(rtmp, 2)) / DOUBLE(totalfile - 1.0) - pow(rvalue, 2)) / DOUBLE(totalfile - 2.0));
+    rvar = sqrt(((rsum_square - pow(rtmp, 2)) / DOUBLE(N_totalfile - 1.0) - pow(rvalue, 2)) / DOUBLE(N_totalfile - 2.0));
 
     CVARRAY rresult(maxline);
     rresult = 0.0;
@@ -112,11 +112,11 @@ void jackknife_resample(char *rawdata[], char *realresult[], char *imagresult[],
       rresult[j].imag(rvar[j]);
     }
 
-    write_bin(realresult[i], maxline, rresult);
+    write_bin(reallist[i], maxline, rresult);
 
-    ivalue = (isum - itmp) / (totalfile - 1.0);
+    ivalue = (isum - itmp) / (N_totalfile - 1.0);
     // About this variance, please refer to eq.(7.37) on P.383, Montvay LQCD book
-    ivar = sqrt(((isum_square - pow(itmp, 2)) / DOUBLE(totalfile - 1.0) - pow(ivalue, 2)) / DOUBLE(totalfile - 2.0));
+    ivar = sqrt(((isum_square - pow(itmp, 2)) / DOUBLE(N_totalfile - 1.0) - pow(ivalue, 2)) / DOUBLE(N_totalfile - 2.0));
 
     CVARRAY iresult(maxline);
     iresult = 0.0;
@@ -126,37 +126,37 @@ void jackknife_resample(char *rawdata[], char *realresult[], char *imagresult[],
       iresult[j].imag(ivar[j]);
     }
 
-    write_bin(imagresult[i], maxline, iresult);
+    write_bin(imaglist[i], maxline, iresult);
   }
 }
 
 // Jackknife average
-void jackknife_average(char *rawdata[], const char *result, int maxline, int totalfile, DATATYPE type)
+void jackknife_average(char *rawdlist[], const char *result, int maxline, int N_totalfile, DATATYPE type)
 {
   DVARRAY mean(maxline), var(maxline);
   mean = var = 0.0;
 
   if (type == SINGLE_LINE)
   {
-    for (int i = 0; i < totalfile; i++)
+    for (int i = 0; i < N_totalfile; i++)
     {
       DVARRAY tmp(maxline);
       tmp = 0.0;
-      read_bin(rawdata[i], maxline, tmp);
+      read_bin(rawdlist[i], maxline, tmp);
 
-      mean += tmp / DOUBLE(totalfile);
+      mean += tmp / DOUBLE(N_totalfile);
     }
 
-    for (int i = 0; i < totalfile; i++)
+    for (int i = 0; i < N_totalfile; i++)
     {
       DVARRAY tmp(maxline);
       tmp = 0.0;
-      read_bin(rawdata[i], maxline, tmp);
+      read_bin(rawdlist[i], maxline, tmp);
 
       var += pow((tmp - mean), 2);
     }
 
-    var = sqrt(var * DOUBLE(totalfile - 1) / DOUBLE(totalfile));
+    var = sqrt(var * DOUBLE(N_totalfile - 1) / DOUBLE(N_totalfile));
 
     // Output the final result to txt file
     CVARRAY jkout(maxline);
@@ -173,24 +173,24 @@ void jackknife_average(char *rawdata[], const char *result, int maxline, int tot
 
   if (type == DOUBLE_LINE)
   {
-    for (int i = 0; i < totalfile; i++)
+    for (int i = 0; i < N_totalfile; i++)
     {
       CVARRAY tmp(maxline);
       tmp = 0.0;
-      read_bin(rawdata[i], maxline, tmp);
+      read_bin(rawdlist[i], maxline, tmp);
 
       DVARRAY rtmp(maxline);
       rtmp = 0.0;
       keep_real(tmp, rtmp, maxline);
 
-      mean += rtmp / DOUBLE(totalfile);
+      mean += rtmp / DOUBLE(N_totalfile);
     }
 
-    for (int i = 0; i < totalfile; i++)
+    for (int i = 0; i < N_totalfile; i++)
     {
       CVARRAY tmp(maxline);
       tmp = 0.0;
-      read_bin(rawdata[i], maxline, tmp);
+      read_bin(rawdlist[i], maxline, tmp);
 
       DVARRAY rtmp(maxline);
       rtmp = 0.0;
@@ -199,7 +199,7 @@ void jackknife_average(char *rawdata[], const char *result, int maxline, int tot
       var += pow((rtmp - mean), 2);
     }
 
-    var = sqrt(var * DOUBLE(totalfile - 1) / DOUBLE(totalfile));
+    var = sqrt(var * DOUBLE(N_totalfile - 1) / DOUBLE(N_totalfile));
 
     // Output the final result to txt file
     CVARRAY jkout(maxline);

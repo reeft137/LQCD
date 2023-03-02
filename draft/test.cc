@@ -1,6 +1,8 @@
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include <libgen.h>
 #include <complex>
 #include <valarray>
@@ -21,12 +23,15 @@ int main(int argc, char *argv[])
   // VARRAY_DOUBLE rtest(4);
   // test = 0.0;
   // rtest = 0.0;
-
+  const char *test1 = "hello!";
+  const char *test2 = "pre.";
+  std::string cpptest1 = test1;
+  std::string cpptest2 = test2;
   // printf("%lu\n", sizeof(test[0])/sizeof(double));
 
-  for (size_t i = 0; i < 99; i++)
-    printf("%lu\n", i);
-  
+  std::string cpptest3 = cpptest2 + cpptest1;
+  printf("%s\n", test1);
+  std::cout << cpptest3 << "\n";
 
   // FILE* fp = NULL;
   // fp = fopen("./test.txt", "w");

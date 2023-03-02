@@ -9,67 +9,64 @@
 
 #include "dataio.h"
 
-void read_bin(const char *fname, int maxline, DOUBLE *data)
+void read_bin(const char *datafile, int maxline, DOUBLE *data)
 {
   char pname[2048];
-  gen_print_name(fname, pname);
+  gen_print_name(datafile, pname);
   fprintf(stderr, "Reading data from file '%s'... \n", pname);
 
-  FILE *fp = fopen(fname, "rb");
+  FILE *fp = fopen(datafile, "rb");
   if (fp == NULL)
   {
-    perror(fname);
+    perror(datafile);
     exit(1);
   }
 
   fread(data, sizeof(DOUBLE), maxline, fp);
   fclose(fp);
 }
-
-void read_bin(const char *fname, int maxline, COMPLX *data)
+void read_bin(const char *datafile, int maxline, COMPLX *data)
 {
   char pname[2048];
-  gen_print_name(fname, pname);
+  gen_print_name(datafile, pname);
   fprintf(stderr, "Reading data from file '%s'... \n", pname);
 
-  FILE *fp = fopen(fname, "rb");
+  FILE *fp = fopen(datafile, "rb");
   if (fp == NULL)
   {
-    perror(fname);
+    perror(datafile);
     exit(1);
   }
 
   fread(data, sizeof(COMPLX), maxline, fp);
   fclose(fp);
 }
-
-void read_bin(const char *fname, int maxline, DVARRAY &data)
+void read_bin(const char *datafile, int maxline, DVARRAY &data)
 {
   char pname[2048];
-  gen_print_name(fname, pname);
+  gen_print_name(datafile, pname);
   fprintf(stderr, "Reading data from file '%s'... \n", pname);
 
-  FILE *fp = fopen(fname, "rb");
+  FILE *fp = fopen(datafile, "rb");
   if (fp == NULL)
   {
-    perror(fname);
+    perror(datafile);
     exit(1);
   }
 
   fread(&data[0], sizeof(DOUBLE), maxline, fp);
   fclose(fp);
 }
-
-void read_bin(const char *fname, int maxline, CVARRAY &data)
+void read_bin(const char *datafile, int maxline, CVARRAY &data)
 {
   char pname[2048];
-  gen_print_name(fname, pname);
+  gen_print_name(datafile, pname);
   fprintf(stderr, "Reading data from file '%s'... \n", pname);
 
-  FILE *fp = fopen(fname, "rb");
+  FILE *fp = fopen(datafile, "rb");
   if (fp == NULL)
   {
-    perror(fname);
+    perror(datafile);
     exit(1);
   }
 
@@ -77,67 +74,64 @@ void read_bin(const char *fname, int maxline, CVARRAY &data)
   fclose(fp);
 }
 
-void write_bin(const char *fname, int maxline, const DOUBLE *data)
+void write_bin(const char *datafile, int maxline, const DOUBLE *data)
 {
   char pname[2048];
-  gen_print_name(fname, pname);
+  gen_print_name(datafile, pname);
   fprintf(stderr, "Writing data to file   '%s'... \n", pname);
 
-  FILE *fp = fopen(fname, "wb");
+  FILE *fp = fopen(datafile, "wb");
   if (fp == NULL)
   {
-    perror(fname);
+    perror(datafile);
     exit(1);
   }
 
   fwrite(data, sizeof(DOUBLE), maxline, fp);
   fclose(fp);
 }
-
-void write_bin(const char *fname, int maxline, const COMPLX *data)
+void write_bin(const char *datafile, int maxline, const COMPLX *data)
 {
   char pname[2048];
-  gen_print_name(fname, pname);
+  gen_print_name(datafile, pname);
   fprintf(stderr, "Writing data to file   '%s'... \n", pname);
 
-  FILE *fp = fopen(fname, "wb");
+  FILE *fp = fopen(datafile, "wb");
   if (fp == NULL)
   {
-    perror(fname);
+    perror(datafile);
     exit(1);
   }
 
   fwrite(data, sizeof(COMPLX), maxline, fp);
   fclose(fp);
 }
-
-void write_bin(const char *fname, int maxline, const DVARRAY &data)
+void write_bin(const char *datafile, int maxline, const DVARRAY &data)
 {
   char pname[2048];
-  gen_print_name(fname, pname);
+  gen_print_name(datafile, pname);
   fprintf(stderr, "Writing data to file   '%s'... \n", pname);
 
-  FILE *fp = fopen(fname, "wb");
+  FILE *fp = fopen(datafile, "wb");
   if (fp == NULL)
   {
-    perror(fname);
+    perror(datafile);
     exit(1);
   }
 
   fwrite(&data[0], sizeof(DOUBLE), maxline, fp);
   fclose(fp);
 }
-
-void write_bin(const char *fname, int maxline, const CVARRAY &data)
+void write_bin(const char *datafile, int maxline, const CVARRAY &data)
 {
   char pname[2048];
-  gen_print_name(fname, pname);
+  gen_print_name(datafile, pname);
   fprintf(stderr, "Writing data to file   '%s'... \n", pname);
 
-  FILE *fp = fopen(fname, "wb");
+  FILE *fp = fopen(datafile, "wb");
   if (fp == NULL)
   {
-    perror(fname);
+    perror(datafile);
     exit(1);
   }
 
@@ -145,10 +139,10 @@ void write_bin(const char *fname, int maxline, const CVARRAY &data)
   fclose(fp);
 }
 
-void bin2txt(const char *ifname, const char *ofname, int maxline)
+void bin2txt(const char *namebin, const char *nametxt, int maxline)
 {
   char ipname[2048];
-  gen_print_name(ifname, ipname);
+  gen_print_name(namebin, ipname);
   fprintf(stderr, "Reading data from file '%s'... \n", ipname);
 
   COMPLX data[maxline];
@@ -157,10 +151,10 @@ void bin2txt(const char *ifname, const char *ofname, int maxline)
     data[i] = 0.0;
   }
 
-  FILE *ifp = fopen(ifname, "rb");
+  FILE *ifp = fopen(namebin, "rb");
   if (ifp == NULL)
   {
-    perror(ifname);
+    perror(namebin);
     exit(1);
   }
 
@@ -168,36 +162,35 @@ void bin2txt(const char *ifname, const char *ofname, int maxline)
   fclose(ifp);
 
   char opname[2048];
-  gen_print_name(ofname, opname);
+  gen_print_name(nametxt, opname);
   fprintf(stderr, "Writing data to file   '%s'... \n", opname);
 
-  FILE *ofp = fopen(ofname, "w");
+  FILE *ofp = fopen(nametxt, "w");
   if (ofp == NULL)
   {
-    perror(ofname);
+    perror(nametxt);
     exit(1);
   }
 
   for (int i = 0; i < maxline; i++)
   {
-    data[i] = 0.0;
     fprintf(ofp, "%d %1.16e %1.16e\n", i, data[i].real(), data[i].imag());
   }
   fclose(ofp);
 }
 
-void keep_real(CVARRAY &data, DVARRAY &rdata, int maxline)
+void keep_real(CVARRAY &data, DVARRAY &realdata, int maxline)
 {
   for (int i = 0; i < maxline; i++)
   {
-    rdata[i] = data[i].real();
+    realdata[i] = data[i].real();
   }
 }
 
-void keep_imag(CVARRAY &data, DVARRAY &idata, int maxline)
+void keep_imag(CVARRAY &data, DVARRAY &imagdata, int maxline)
 {
   for (int i = 0; i < maxline; i++)
   {
-    idata[i] = data[i].imag();
+    imagdata[i] = data[i].imag();
   }
 }

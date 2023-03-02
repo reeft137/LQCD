@@ -20,14 +20,15 @@
 // enum for judging the data type
 enum DATATYPE
 {
-  SINGLE_LINE = 1, DOUBLE_LINE = 2
+  SINGLE_LINE = 1,
+  DOUBLE_LINE = 2
 };
 
 // Jackknife resampling
-void jackknife_resample(char *rawdata[], char *realresult[], int maxline, int totalfile);
-void jackknife_resample(char *rawdata[], char *realresult[], char *imagresult[], int maxline, int totalfile);
+void jackknife_resample(char *rawdlist[], char *reallist[], int maxline, int N_totalfile);
+void jackknife_resample(char *rawdlist[], char *reallist[], char *imaglist[], int maxline, int N_totalfile);
 
 // Jackknife average
-void jackknife_average(char *rawdata[], const char *result, int maxline, int totalfile, DATATYPE datatype);
+void jackknife_average(char *rawdlist[], const char *result, int maxline, int N_totalfile, DATATYPE datatype);
 
 #endif

@@ -2,48 +2,53 @@
 ulimit -n 1024
 
 DATA_DIR=$1
+DATA_DIR_BASE=$(basename $DATA_DIR)
 LQCD_BASE_DIR=/home/puppy/LQCD
-SPACESITES=32
+TIMESITES=64
 
 cd $DATA_DIR
+echo "Working Directory: "
+echo "$DATA_DIR"
+echo " "
+
+rm -rf $DATA_DIR_BASE.result
+rm -rf resample_tmp
+mkdir $DATA_DIR_BASE.result
 
 # Step 0: Sort
-for i in {00..31}; do
-  mkdir -p raw/$i
-  mv raw/*.+$i.* raw/$i
-done
+# mkdir s v t av ps; mv *.s.* s; mv *.v.* v; mv *.t.* t; mv *.av.* av; mv *.ps.* ps
+# mkdir raw; mv s v t av ps raw
 
-# Step 1: Calculate correlators and laplacianed data
+# Step 1: Calculate correlators and effective masses
 for type in $(ls raw); do
-  for time in $(ls raw/$type); do
-    mkdir -p space-corr-result laplacian-tmp/$type/$time
+  mkdir -p resample_tmp/$type
 
-    echo "Processing with \"$DATA_DIR/raw/$type/$time\""
-    $LQCD_BASE_DIR/bin/corr-space -spacelength $SPACESITES -corr space-corr-result/$type.$time raw/$type/$time/TR.*
+  echo "Processing with \"$DATA_DIR_BASE/raw/$type\""
+  $LQCD_BASE_DIR/bin/time -timelength $TIMESITES -corr $DATA_DIR_BASE.result/$type raw/$type/2pt.*
 
-    mv raw/$type/$time/lap.* laplacian-tmp/$type/$time
-  done
+  mv raw/$type/js.* resample_tmp/$type
 done
+# mkdir -p resample_tmp/
 
-# Step 2: Calculate V_0 and V_s 
-# (1) Generate V_0 and V_s of different configurations
-for time in $(ls laplacian-tmp/v); do
-  mkdir -p pot-tmp/v0/$time pot-tmp/vs/$time
-  for idata in $(ls laplacian-tmp/v/$time); do
-    V_DATA=$idata
-    PS_DATA=${idata/.v./.ps.}
-    V0_DATA=${idata/lap.TR.4pt.v./v0.}
-    VS_DATA=${idata/lap.TR.4pt.v./vs.}
+# echo "Processing with \"$DATA_DIR_BASE/raw/av\""
+# $LQCD_BASE_DIR/bin/time -timelength $TIMESITES -corr $DATA_DIR_BASE.result/av raw/av/2pt.*
 
-    $LQCD_BASE_DIR/bin/v_0 -spacelength $SPACESITES -ofname pot-tmp/v0/$time/$V0_DATA laplacian-tmp/v/$time/$V_DATA laplacian-tmp/ps/$time/$PS_DATA
-    $LQCD_BASE_DIR/bin/v_s -spacelength $SPACESITES -ofname pot-tmp/vs/$time/$VS_DATA laplacian-tmp/v/$time/$V_DATA laplacian-tmp/ps/$time/$PS_DATA
-  done
-done
-# (2) Jackknife average
-for type in $(ls pot-tmp); do
-  for time in $(ls pot-tmp/$type); do
-    echo "Processing with \"$DATA_DIR/pot-tmp/$type/$time\""
+# mv raw/av/js.* resample_tmp/av
+# rm raw/av/exp.*
 
-    $LQCD_BASE_DIR/bin/corr-space -spacelength $SPACESITES -pot space-corr-result/$type.$time pot-tmp/$type/$time/$type.*
-  done
-done
+# # Step 2: Fit the mass
+# # (1) Generate V_0 and V_s of different configurations
+# for time in $(ls laplacian-tmp/v); do
+#   mkdir -p pot-tmp/v0/$time pot-tmp/vs/$time
+#   for idata in $(ls laplacian-tmp/v/$time); do
+#     V_DATA=$idata
+#     PS_DATA=${idata/.v./.ps.}
+#     V0_DATA=${idata/lap.TR.4pt.v./v0.}
+#     VS_DATA=${idata/lap.TR.4pt.v./vs.}
+
+#     $LQCD_BASE_DIR/bin/v_0 -spacelength $TIMESITES -ofname pot-tmp/v0/$time/$V0_DATA laplacian-tmp/v/$time/$V_DATA laplacian-tmp/ps/$time/$PS_DATA
+#     $LQCD_BASE_DIR/bin/v_s -spacelength $TIMESITES -ofname pot-tmp/vs/$time/$VS_DATA laplacian-tmp/v/$time/$V_DATA laplacian-tmp/ps/$time/$PS_DATA
+#   done
+# done
+
+# rm -rf resample_tmp
